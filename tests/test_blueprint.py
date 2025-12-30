@@ -11,6 +11,7 @@ def test_blueprint_execution() -> None:
         .pipe(Op.assert_str())
         .pipe(Op.split("@"))
         .pipe(Op.index(1))
+        .guard_str()
         .pipe(Op.to_uppercase())
     )
 
@@ -28,7 +29,9 @@ def test_do_with_blueprint() -> None:
     bp = Blueprint().pipe(Op.assert_str()).pipe(Op.split("@")).pipe(Op.index(1))
 
     @do
-    def workflow(raw: str) -> Generator[Result[str, RopeError], str, Result[str, RopeError]]:
+    def workflow(
+        raw: str,
+    ) -> Generator[Result[object, RopeError], object, Result[str, RopeError]]:
         domain = yield run(bp, raw)
         return Ok(f"Processed: {domain}")
 
@@ -37,3 +40,30 @@ def test_do_with_blueprint() -> None:
 
     err = workflow("bad")
     assert err.is_err()
+
+
+def test_expect_str_operator() -> None:
+    """Test expect_str() as a type-narrowing operator after index/get."""
+    bp = (
+        Blueprint()
+        .pipe(Op.assert_str())
+        .pipe(Op.split("@"))
+        .pipe(Op.index(1))
+        .pipe(Op.expect_str())
+        .pipe(Op.to_uppercase())
+    )
+
+    result = run(bp, "alice@example.com")
+    assert result.is_ok()
+    assert result.unwrap() == "EXAMPLE.COM"
+
+    # Should fail if index returns non-string
+    fail_bp = (
+        Blueprint()
+        .pipe(Op.assert_str())
+        .pipe(Op.split(" "))
+        .pipe(Op.index(10))  # Out of bounds -> returns error before expect_str
+        .pipe(Op.expect_str())
+    )
+    fail_result = run(fail_bp, "hello world")
+    assert fail_result.is_err()

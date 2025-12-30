@@ -4,7 +4,7 @@ mod py;
 
 use py::{
     op_assert_str, op_get_key, op_index, op_split, op_to_uppercase, py_err, py_none, py_ok,
-    py_some, run, Blueprint, ErrorKindObj, Operator, OptionObj, ResultObj, RopeError,
+    py_some, run, Blueprint, ErrorKindObj, Op, Operator, OptionObj, ResultObj, RopeError,
 };
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
@@ -18,6 +18,7 @@ fn pyrope_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<RopeError>()?;
     m.add_class::<Operator>()?;
     m.add_class::<Blueprint>()?;
+    m.add_class::<Op>()?;
     m.add_function(wrap_pyfunction!(py_ok, m)?)?;
     m.add_function(wrap_pyfunction!(py_err, m)?)?;
     m.add_function(wrap_pyfunction!(py_some, m)?)?;
@@ -42,6 +43,7 @@ fn pyrope_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
             "ErrorKind",
             "Operator",
             "Blueprint",
+            "Op",
             "run",
         ],
     )?;

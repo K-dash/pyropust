@@ -1,8 +1,3 @@
-from pkgutil import extend_path
-
-__path__ = extend_path(__path__, __name__)
-
-from .blueprint import Op
 from .do import do
 
 try:
@@ -12,6 +7,7 @@ try:
         ErrorKind,
         None_,
         Ok,
+        Op,
         Operator,
         Option,
         Result,

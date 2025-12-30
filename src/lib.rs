@@ -68,9 +68,7 @@ impl ResultObj {
             let out = f.call1((value.clone_ref(py),))?;
             let result_type = py.get_type::<ResultObj>();
             if !out.is_instance(result_type.as_any())? {
-                return Err(PyTypeError::new_err(
-                    "and_then callback must return Result",
-                ));
+                return Err(PyTypeError::new_err("and_then callback must return Result"));
             }
             let out_ref: PyRef<'_, ResultObj> = out.extract()?;
             Ok(ResultObj {
@@ -177,7 +175,6 @@ fn none_() -> OptionObj {
     }
 }
 
-
 #[derive(Clone, Debug)]
 enum PathItem {
     Key(String),
@@ -212,17 +209,35 @@ struct ErrorKindObj {
 impl ErrorKindObj {
     #[classattr]
     fn InvalidInput(py: Python<'_>) -> Py<ErrorKindObj> {
-        Py::new(py, ErrorKindObj { kind: ErrorKind::InvalidInput }).expect("ErrorKind alloc")
+        Py::new(
+            py,
+            ErrorKindObj {
+                kind: ErrorKind::InvalidInput,
+            },
+        )
+        .expect("ErrorKind alloc")
     }
 
     #[classattr]
     fn NotFound(py: Python<'_>) -> Py<ErrorKindObj> {
-        Py::new(py, ErrorKindObj { kind: ErrorKind::NotFound }).expect("ErrorKind alloc")
+        Py::new(
+            py,
+            ErrorKindObj {
+                kind: ErrorKind::NotFound,
+            },
+        )
+        .expect("ErrorKind alloc")
     }
 
     #[classattr]
     fn Internal(py: Python<'_>) -> Py<ErrorKindObj> {
-        Py::new(py, ErrorKindObj { kind: ErrorKind::Internal }).expect("ErrorKind alloc")
+        Py::new(
+            py,
+            ErrorKindObj {
+                kind: ErrorKind::Internal,
+            },
+        )
+        .expect("ErrorKind alloc")
     }
 
     fn __repr__(&self) -> String {
@@ -471,6 +486,7 @@ fn op_to_uppercase() -> Operator {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn rope_error(
     py: Python<'_>,
     kind: ErrorKind,

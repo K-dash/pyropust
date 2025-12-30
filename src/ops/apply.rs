@@ -64,20 +64,32 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
 fn expect_str(op: &'static str, value: Value) -> Result<String, OpError> {
     match value {
         Value::Str(text) => Ok(text),
-        other => Err(OpError::type_mismatch(op, "str", other.type_name().to_string())),
+        other => Err(OpError::type_mismatch(
+            op,
+            "str",
+            other.type_name().to_string(),
+        )),
     }
 }
 
 fn expect_list(op: &'static str, value: Value) -> Result<Vec<Value>, OpError> {
     match value {
         Value::List(items) => Ok(items),
-        other => Err(OpError::type_mismatch(op, "list", other.type_name().to_string())),
+        other => Err(OpError::type_mismatch(
+            op,
+            "list",
+            other.type_name().to_string(),
+        )),
     }
 }
 
 fn expect_map(op: &'static str, value: Value) -> Result<HashMap<String, Value>, OpError> {
     match value {
         Value::Map(map) => Ok(map),
-        other => Err(OpError::type_mismatch(op, "map", other.type_name().to_string())),
+        other => Err(OpError::type_mismatch(
+            op,
+            "map",
+            other.type_name().to_string(),
+        )),
     }
 }

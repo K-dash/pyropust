@@ -1,5 +1,6 @@
 from collections.abc import Callable, Generator
 from functools import wraps
+from typing import TYPE_CHECKING, cast
 
 from .pyrope_native import Result
 
@@ -25,6 +26,9 @@ def do[**P, T, E, R](
             if not isinstance(current, Result):
                 raise TypeError("yielded value must be Result")
             if current.is_err():
+                # On error, the value type is irrelevant, so cast to Result[R, E]
+                if TYPE_CHECKING:
+                    return cast("Result[R, E]", current)
                 return current
             try:
                 current = gen.send(current.unwrap())

@@ -32,7 +32,55 @@ module-name = "pyrope.pyrope_native"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["ALL"]
+ignore = [
+  # Docstring rules - not required for all projects
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class
+  "D102", # Missing docstring in public method
+  "D103", # Missing docstring in public function
+  "D104", # Missing docstring in public package
+  "D105", # Missing docstring in magic method
+  "D107", # Missing docstring in __init__
+  "D203", # 1 blank line required before class docstring (conflicts with D211)
+  "D213", # Multi-line docstring summary should start at the second line (conflicts with D212)
+
+  # Type annotation rules - already covered by mypy/pyright
+  "ANN401", # Dynamically typed expressions (Any)
+
+  # Exception handling style
+  "EM101",  # Exception must not use a string literal
+  "EM102",  # Exception must not use an f-string literal
+  "TRY003", # Avoid specifying long messages outside the exception class
+
+  # TODO/FIXME comments
+  "FIX002", # Line contains TODO
+  "TD002",  # Missing author in TODO
+  "TD003",  # Missing issue link in TODO
+
+  # Too strict for small projects
+  "S101", # Use of assert detected
+  "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+
+  # Code style - personal preference
+  "COM812", # Trailing comma missing (conflicts with formatter)
+  "ISC001", # Implicitly concatenated string literals (conflicts with formatter)
+
+  # Specific cases
+  "PYI001",  # TypeVar naming convention for stubs
+  "PYI035",  # __all__ in stub files can be type-only
+  "UP046",   # Keep old-style Generic for covariant/contravariant TypeVars
+  "N802",    # Allow capitalized function names (Ok, Err, Some, None_) for Rust compatibility
+  "A002",    # Allow shadowing built-ins for parameter names
+  "TC001",   # Allow runtime imports in test files
+  "TC003",   # Allow runtime imports that are also used in type annotations
+  "C901",    # Allow complex functions (do decorator is inherently complex)
+  "B904",    # Allow raising exceptions without from in controlled contexts
+  "INP001",  # Allow implicit namespace packages for tests
+  "RUF003",  # Allow fullwidth characters in comments (Japanese comments)
+  "PLR0913", # Too many arguments (already handled with clippy)
+  "PLR2004", # Magic value used in comparison
+]
 
 [tool.mypy]
 python_version = "3.14"
@@ -43,4 +91,8 @@ mypy_path = ["pyrope"]
 [tool.pyright]
 pythonVersion = "3.14"
 venvPath = "."
+typeCheckingMode = "strict"
 reportMissingTypeStubs = false
+reportPrivateUsage = false
+reportUnnecessaryIsInstance = false
+reportUnknownVariableType = false

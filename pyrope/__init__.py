@@ -12,8 +12,8 @@ try:
         ErrorKind,
         None_,
         Ok,
-        Option,
         Operator,
+        Option,
         Result,
         RopeError,
         Some,
@@ -21,22 +21,21 @@ try:
     )
 except ModuleNotFoundError as exc:
     raise ModuleNotFoundError(
-        "pyrope extension module not found. "
-        "Run `uv sync` or `maturin develop` to build it."
+        "pyrope extension module not found. Run `uv sync` or `maturin develop` to build it.",
     ) from exc
 
 __all__ = [
-    "Result",
-    "Option",
-    "Ok",
-    "Err",
-    "Some",
-    "None_",
-    "RopeError",
-    "ErrorKind",
-    "Operator",
     "Blueprint",
-    "run",
+    "Err",
+    "ErrorKind",
+    "None_",
+    "Ok",
     "Op",
+    "Operator",
+    "Option",
+    "Result",
+    "RopeError",
+    "Some",
     "do",
+    "run",
 ]

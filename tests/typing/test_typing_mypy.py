@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Sequence, assert_type
+from collections.abc import Generator, Sequence
+from typing import TYPE_CHECKING, assert_type
 
-from pyrope import Blueprint, Err, Ok, Result, RopeError, do, run, Op
+from pyrope import Blueprint, Err, Ok, Op, Result, RopeError, do, run
 
 if TYPE_CHECKING:
 

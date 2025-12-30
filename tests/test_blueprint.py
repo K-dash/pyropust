@@ -25,12 +25,7 @@ def test_blueprint_execution() -> None:
 
 
 def test_do_with_blueprint() -> None:
-    bp = (
-        Blueprint()
-        .pipe(Op.assert_str())
-        .pipe(Op.split("@"))
-        .pipe(Op.index(1))
-    )
+    bp = Blueprint().pipe(Op.assert_str()).pipe(Op.split("@")).pipe(Op.index(1))
 
     @do
     def workflow(raw: str) -> Generator[Result[str, RopeError], str, Result[str, RopeError]]:

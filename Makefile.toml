@@ -1,0 +1,114 @@
+[config]
+default_to_workspace = false
+
+[env]
+CARGO_TERM_COLOR = "always"
+
+# =============================================================================
+# Maturin / Build Tasks
+# =============================================================================
+
+[tasks.dev]
+description = "Build and install pyrope extension (development mode)"
+command = "uv"
+args = ["run", "maturin", "develop"]
+
+[tasks.build]
+alias = "dev"
+
+[tasks.build-release]
+description = "Build pyrope wheel for distribution (release mode)"
+command = "uv"
+args = ["run", "maturin", "build", "--release"]
+
+[tasks.clean]
+description = "Clean all build artifacts (Rust + Python)"
+dependencies = ["rust-clean", "python-clean"]
+
+[tasks.python-clean]
+description = "Clean Python build artifacts"
+script = '''
+rm -rf pyrope/*.so
+rm -rf pyrope/__pycache__
+rm -rf tests/__pycache__
+rm -rf tests/typing/__pycache__
+rm -rf .pytest_cache
+rm -rf .mypy_cache
+rm -rf .ruff_cache
+rm -rf dist
+rm -rf target/wheels
+'''
+
+# =============================================================================
+# Rust Tasks
+# =============================================================================
+
+[tasks.rust-build]
+description = "Build Rust library (release)"
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.rust-build-dev]
+description = "Build Rust library (debug)"
+command = "cargo"
+args = ["build"]
+
+[tasks.rust-test]
+description = "Run Rust tests"
+command = "cargo"
+args = ["test"]
+
+[tasks.rust-fmt]
+description = "Format Rust code"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.rust-fmt-check]
+description = "Check Rust code formatting"
+command = "cargo"
+args = ["fmt", "--check"]
+
+[tasks.rust-clippy]
+description = "Run clippy"
+command = "cargo"
+args = ["clippy", "--all-targets", "--", "-D", "warnings"]
+
+[tasks.rust-clean]
+description = "Clean Rust build artifacts"
+command = "cargo"
+args = ["clean"]
+
+# =============================================================================
+# Python Test Tasks
+# =============================================================================
+
+[tasks.pytest]
+description = "Run Python tests (pytest) via uv"
+command = "uv"
+args = ["run", "pytest", "-v"]
+
+[tasks.pyright]
+description = "Run pyright type checks via uv"
+command = "uv"
+args = ["run", "pyright", "tests/"]
+
+[tasks.mypy]
+description = "Run mypy strict type checks via uv"
+command = "uv"
+args = ["run", "mypy", "--strict", "tests/"]
+
+[tasks.test-all]
+description = "Run all tests (mypy, pyright, pytest)"
+dependencies = ["mypy", "pyright", "pytest"]
+
+# =============================================================================
+# Combined Tasks
+# =============================================================================
+
+[tasks.check]
+description = "Run all checks (format check, clippy, type checks, tests)"
+dependencies = ["rust-fmt-check", "rust-clippy", "test-all"]
+
+[tasks.ci]
+description = "Run CI pipeline (build + check)"
+dependencies = ["dev", "check"]

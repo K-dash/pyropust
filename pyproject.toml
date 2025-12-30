@@ -1,0 +1,46 @@
+[build-system]
+requires = ["maturin>=1.6"]
+build-backend = "maturin"
+
+[project]
+name = "pyrope"
+version = "0.1.0"
+description = "Rust Result/Option types exposed to Python with @do generator short-circuiting"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "PoC" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+dev = [
+  "maturin>=1.6",
+  "mypy>=1.10",
+  "pyright>=1.1.370",
+  "pytest>=9.0.2",
+  "ruff>=0.6",
+]
+
+[tool.maturin]
+python-source = "."
+module-name = "pyrope.pyrope_native"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+show_error_codes = true
+mypy_path = ["pyrope"]
+
+[tool.pyright]
+pythonVersion = "3.14"
+venvPath = "."
+reportMissingTypeStubs = false

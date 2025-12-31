@@ -2,6 +2,7 @@ mod blueprint;
 mod error;
 mod op_generated;
 mod operator;
+mod option;
 mod result;
 
 pub use blueprint::{run, Blueprint};
@@ -10,4 +11,5 @@ pub use error::{ErrorKindObj, RopeError};
 pub use op_generated::{Op, OpCoerce, OpCore, OpMap, OpSeq, OpText};
 // END GENERATED EXPORTS
 pub use operator::Operator;
-pub use result::{py_err, py_none, py_ok, py_some, OptionObj, ResultObj};
+pub use option::{py_none, py_some, OptionObj};
+pub use result::{py_err, py_ok, ResultObj};

@@ -53,7 +53,7 @@ You do not need to switch everything at once. A realistic path is:
 
 ## Key concepts
 
-### 1) Result and Option
+## 1) Result and Option
 
 Rust-style `Result[T, E]` and `Option[T]` as first-class values.
 
@@ -67,17 +67,39 @@ maybe = Some(42)
 empty = None_()
 ```
 
+Result is explicit about failures. You can return it from functions and branch on `is_ok / is_err` without exceptions.
+
+```python
+from pyropust import Ok, Err, Result
+
+def divide(a: int, b: int) -> Result[float, str]:
+    if b == 0:
+        return Err("division by zero")
+    return Ok(a / b)
+
+res = divide(10, 2)
+if res.is_ok():
+    value = res.unwrap()
+else:
+    error = res.unwrap_err()
+```
+
 Keep Option short and explicit: you must unwrap or provide defaults.
 
 ```python
-from pyropust import Some, None_
+from pyropust import Some, None_, Option
 
-user = Some("alice")
+def find_user(user_id: int) -> Option[str]:
+    return Some("alice") if user_id == 1 else None_()
+
+user = find_user(1)
 name = user.unwrap_or("guest")
 
-missing = None_()
+missing = find_user(2)
 name2 = missing.unwrap_or("guest")
 ```
+
+Unlike `Optional[T]` (which is only a type hint), `Option[T]` is a runtime value that forces explicit handling.
 
 #### Functional Chaining (`map`, `and_then`)
 

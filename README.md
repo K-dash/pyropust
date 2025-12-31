@@ -1,5 +1,7 @@
 # pyropust
 
+[![Python versions](https://img.shields.io/pypi/pyversions/pyropust.svg)](https://pypi.org/project/pyropust/)
+
 **Rust-powered, type-safe pipelines for Python.**
 
 pyropust bridges the messy, exception-heavy reality of Python with the explicit, composable world of Rust’s `Result / Option`.
@@ -18,8 +20,6 @@ If you have ever thought:
 
 pyropust is designed for you.
 
----
-
 ## Why pyropust exists
 
 Python already has multiple `Result / Option` libraries. The problem is not representation — it is integration.
@@ -32,8 +32,6 @@ In real Python systems:
 
 pyropust treats exceptions as an external reality and provides a structured boundary where they are captured, typed, and composed.
 
----
-
 ## Why not exceptions?
 
 Exceptions are great for failures that should abort the current operation. They are less suitable for orchestration and pipelines:
@@ -44,8 +42,6 @@ Exceptions are great for failures that should abort the current operation. They 
 
 pyropust makes failures **values** so they can be composed, transformed, and tested like data.
 
----
-
 ## Adoption path
 
 You do not need to switch everything at once. A realistic path is:
@@ -54,8 +50,6 @@ You do not need to switch everything at once. A realistic path is:
 2. Use `Result / Option` explicitly in Python code
 3. Use `@do` for structured propagation
 4. Introduce `Blueprint` for typed pipelines
-
----
 
 ## Key concepts
 
@@ -117,8 +111,6 @@ print(res.unwrap())  # "Value is 246"
 > result = fetch_data().and_then(validate)
 > ```
 
----
-
 ### 2) Blueprint: typed pipelines
 
 A **Blueprint** is a declarative pipeline that describes what happens to data, not how it is wired together.
@@ -144,8 +136,6 @@ Blueprints are the primary abstraction of pyropust.
 
 Blueprints are inert definitions. Use `run(bp, value)` to execute them, typically inside an exception boundary.
 
----
-
 ### 3) Rust operators (hot paths)
 
 Some operations are performance-critical and error-prone. pyropust implements these as Rust-backed operators:
@@ -166,8 +156,6 @@ bp = bp.pipe(Op.map_py(lambda x: x + 1))
 ```
 
 Rust where it matters, Python where it’s convenient.
-
----
 
 ### 4) Exception boundaries (`@catch`)
 
@@ -200,8 +188,6 @@ Outside the boundary:
 
 This makes error flow visible, testable, and composable.
 
----
-
 ### 5) `@do`: Rust-like `?` for Python
 
 The `@do` decorator enables linear, Rust-style propagation of `Result`.
@@ -216,8 +202,6 @@ def process(data: str) -> Result[str, object]:
 ```
 
 This is not syntax sugar over exceptions — it is structured propagation of `Result` values.
-
----
 
 ## Framework boundaries
 
@@ -248,8 +232,6 @@ def create_user(data: dict):
     return {"user": parsed}
 ```
 
----
-
 ## Installation
 
 > pyropust is currently experimental.
@@ -264,8 +246,6 @@ Supported:
 - CPython (wheels provided)
 
 Note: Some platforms may require a Rust toolchain to build from source.
-
----
 
 ## Minimal example (30 seconds)
 
@@ -289,15 +269,11 @@ result = run_value('{"value": 123}')
 - Failures are explicit
 - The pipeline is reusable and testable
 
----
-
 ## Documentation
 
 - [Operators](docs/operations.md)
 - [Errors](docs/errors.md)
 - [Benchmarks](docs/benchmarks.md)
-
----
 
 ## Non-goals
 
@@ -309,8 +285,6 @@ pyropust intentionally does not aim to:
 
 It is a boundary and pipeline tool, not a new language.
 
----
-
 ## Roadmap
 
 - More Rust-backed operators
@@ -318,15 +292,11 @@ It is a boundary and pipeline tool, not a new language.
 - Better IDE / type-checker ergonomics
 - Stabilization of public APIs
 
----
-
 ## Stability
 
 - APIs may change before 1.0
 - Semantic versioning will start at 1.0
 - Breaking changes will be documented
-
----
 
 ## License
 

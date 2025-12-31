@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import os
 import statistics
 import sys
 import timeit
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import cast
 
 from pyropust import Blueprint, Op, run
 
@@ -13,12 +15,13 @@ from pyropust import Blueprint, Op, run
 @dataclass(frozen=True)
 class Case:
     name: str
-    build_bp: Callable[[], Blueprint[str, str]]
-    py_fn: Callable[[str], str]
+    build_bp: Callable[[], Blueprint[object, str]]
+    py_fn: Callable[[object], str]
+    input_transform: Callable[[str], object] | None = None
 
 
-def _pipeline_py(input_text: str, pipe_count: int) -> str:
-    value = input_text
+def _pipeline_py(input_text: object, pipe_count: int) -> str:
+    value = cast("str", input_text)
     for _ in range(pipe_count):
         value = value.split(",")[0].upper()
     return value
@@ -36,16 +39,16 @@ def _pipeline_bp(pipe_count: int) -> Blueprint[str, str]:
     return bp
 
 
-def _tiny_py(input_text: str) -> str:
-    return input_text.upper()
+def _tiny_py(input_text: object) -> str:
+    return cast("str", input_text).upper()
 
 
-def _tiny_bp() -> Blueprint[str, str]:
+def _tiny_bp() -> Blueprint[object, str]:
     return Blueprint.for_type(str).pipe(Op.text.to_uppercase())
 
 
-def _multi_run_py(input_text: str, pipe_count: int) -> str:
-    value = input_text
+def _multi_run_py(input_text: object, pipe_count: int) -> str:
+    value = cast("str", input_text)
     bp = (
         Blueprint.for_type(str)
         .pipe(Op.text.split(","))
@@ -59,6 +62,47 @@ def _multi_run_py(input_text: str, pipe_count: int) -> str:
             raise RuntimeError(f"Blueprint failed: {result.unwrap_err().message}")
         value = result.unwrap()
     return value
+
+
+def _json_py(input_payload: object) -> str:
+    payload = cast("str | bytes", input_payload)
+    parsed = json.loads(payload)
+    return str(parsed["name"]).upper()
+
+
+def _json_bp() -> Blueprint[object, str]:
+    return (
+        Blueprint.for_type(str)
+        .pipe(Op.coerce.json_decode())
+        .pipe(Op.map.get("name"))
+        .pipe(Op.coerce.expect_str())
+        .pipe(Op.text.to_uppercase())
+    )
+
+
+def _json_input(input_text: str) -> str:
+    return json.dumps({"name": input_text})
+
+
+def _json_input_bytes(input_text: str) -> bytes:
+    return json.dumps({"name": input_text}).encode("utf-8")
+
+
+def _map_py_py(input_text: object, pipe_count: int) -> str:
+    value = cast("str", input_text)
+    for _ in range(pipe_count):
+        value = value.upper()[::-1]
+    return value
+
+
+def _map_py_bp(pipe_count: int) -> Blueprint[object, str]:
+    def _map_fn(value: str) -> str:
+        return value.upper()[::-1]
+
+    bp = Blueprint.for_type(str)
+    for _ in range(pipe_count):
+        bp = bp.pipe(Op.map_py(_map_fn))
+    return bp
 
 
 def _cases(pipe_count: int) -> list[Case]:
@@ -77,6 +121,23 @@ def _cases(pipe_count: int) -> list[Case]:
             name="multi_run",
             build_bp=lambda: _pipeline_bp(pipe_count),
             py_fn=lambda s: _multi_run_py(s, pipe_count),
+        ),
+        Case(
+            name="map_py",
+            build_bp=lambda: _map_py_bp(pipe_count),
+            py_fn=lambda s: _map_py_py(s, pipe_count),
+        ),
+        Case(
+            name="json_decode_str",
+            build_bp=_json_bp,
+            py_fn=_json_py,
+            input_transform=_json_input,
+        ),
+        Case(
+            name="json_decode_bytes",
+            build_bp=_json_bp,
+            py_fn=_json_py,
+            input_transform=_json_input_bytes,
         ),
     ]
 
@@ -109,9 +170,11 @@ def _time_case(
     return statistics.median(samples), number
 
 
-def _verify_output(py_fn: Callable[[str], str], bp: Blueprint[str, str], input_text: str) -> None:
-    py_out = py_fn(input_text)
-    bp_out = run(bp, input_text)
+def _verify_output(
+    py_fn: Callable[[object], str], bp: Blueprint[object, str], input_value: object
+) -> None:
+    py_out = py_fn(input_value)
+    bp_out = run(bp, input_value)
     if bp_out.is_err():
         raise RuntimeError(f"Blueprint failed: {bp_out.unwrap_err().message}")
     if py_out != bp_out.unwrap():
@@ -152,10 +215,13 @@ def main() -> None:
                 if case_names and case.name not in case_names:
                     continue
                 bp = case.build_bp()
-                _verify_output(case.py_fn, bp, input_text)
+                input_value = (
+                    case.input_transform(input_text) if case.input_transform else input_text
+                )
+                _verify_output(case.py_fn, bp, input_value)
 
                 globals_: dict[str, object] = {
-                    "INPUT_TEXT": input_text,
+                    "INPUT_TEXT": input_value,
                     "PIPE_COUNT": pipe_count,
                     "bp": bp,
                     "run": run,

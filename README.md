@@ -132,35 +132,18 @@ Start small and adopt features gradually:
 
 ### Benchmark (reproducible, no extra deps)
 
-Run the included `timeit` benchmark to compare a pure-Python pipeline vs `Blueprint` in seconds. The benchmark builds the Blueprint in setup and measures `run()` only, reporting median timings:
+Run the included `timeit` benchmark to compare a pure-Python pipeline vs `Blueprint`. The benchmark builds the Blueprint in setup and measures `run()` only:
 
 ```bash
 uv run python bench/bench_blueprint_vs_python.py
 ```
 
-Note: Results vary by workload; some cases are slower. Treat this as measurement, not a promise of speedup.
+What the latest results show (summary only):
+- Performance is workload-dependent; some cases are slower, some are comparable, and some benefit from fewer boundary crossings.
+- Larger pipelines and repeated runs can show improvements, but tiny operators can be slower.
+- Treat benchmarks as measurements, not a promise of speedups.
 
-`multi_run` compares repeatedly calling `run()` on a single-op Blueprint vs a single `run()` over a multi-op Blueprint (measures boundary-crossing overhead).
-
-Latest run (macOS arm64, Python 3.14.0, BENCH_TARGET_TIME=0.2, BENCH_REPEAT=5, BENCH_SIZES=medium,large, BENCH_PIPE_COUNTS=20, BENCH_CASES=pipeline,tiny_op,multi_run):
-
-```
-Blueprint vs Python (seconds, lower is better)
-repeat=5, target_time~0.2s per measurement
-Blueprint is built in setup; timing measures run() only.
-
-== medium ==
--- pipe_count=20 --
-  pipeline | python: 0.371662s (n=20480) | blueprint: 0.362132s (n=2560) | ratio: 0.97x
-   tiny_op | python: 0.248113s (n=163840) | blueprint: 0.341658s (n=163840) | ratio: 1.38x
- multi_run | python: 0.253638s (n=1280) | blueprint: 0.344409s (n=2560) | ratio: 1.36x
-
-== large ==
--- pipe_count=20 --
-  pipeline | python: 0.215668s (n=640) | blueprint: 0.423312s (n=160) | ratio: 1.96x
-   tiny_op | python: 0.286244s (n=10240) | blueprint: 0.262916s (n=20480) | ratio: 0.92x
- multi_run | python: 0.371366s (n=160) | blueprint: 0.182248s (n=80) | ratio: 0.49x
-```
+Full results and methodology are documented in `docs/benchmarks.md`.
 
 ## Syntactic Sugar: `@do` Decorator
 

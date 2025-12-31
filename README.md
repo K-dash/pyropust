@@ -67,7 +67,8 @@ res = (
 print(res.unwrap())  # "Value is 246"
 ```
 
-> [!TIP] **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
+> [!TIP]
+> **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
 >
 > ```python
 > from pyropust import Ok, Err, Result
@@ -137,7 +138,8 @@ Pyropust provides built-in operators to handle common data tasks safely in Rust,
 - **Type-safe construction**: `Blueprint.for_type(T)` is a helper for static type checkers (Pyright/Mypy). It provides zero-runtime-overhead type hinting.
 - **Exception Bridge**: Use `exception_to_ropust_error()` to normalize external exceptions (like `requests.Error`) into a consistent `RopustError` format.
 
-> [!NOTE] > **Why a shared error format?**
+> [!NOTE]
+> **Why a shared error format?**
 > By unifying errors into `RopustError`, you get a consistent interface across Python and Rust. You can reliably access fields like `path`, `expected`, and `got` without losing context (like Python tracebacks) during pipeline orchestration. See [docs/errors.md](docs/errors.md) for details.
 
 ## Syntactic Sugar: `@do` Decorator

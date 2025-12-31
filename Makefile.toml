@@ -13,14 +13,24 @@ description = "Generate Op class from kind.rs metadata"
 command = "python3"
 args = ["tools/gen_ops.py"]
 
+[tasks.gen-native-stub]
+description = "Generate pyropust_native.pyi from __init__.pyi"
+command = "python3"
+args = ["tools/gen_native_stub.py"]
+
+[tasks.gen-all]
+description = "Generate all code (Op class + native stub)"
+dependencies = ["gen", "gen-native-stub"]
+
 [tasks.check-gen]
 description = "Check if generated code is up-to-date"
 script = """
 python3 tools/gen_ops.py
+python3 tools/gen_native_stub.py
 cargo fmt
-uv run ruff format pyropust/__init__.pyi --quiet
-if ! git diff --exit-code src/py/op_generated.rs src/py/mod.rs src/lib.rs pyropust/__init__.pyi; then
-    echo "❌ Generated code is out of date. Run 'makers gen && makers fmt-all' to update."
+uv run ruff format pyropust/__init__.pyi pyropust/pyropust_native.pyi --quiet
+if ! git diff --exit-code src/py/op_generated.rs src/py/mod.rs src/lib.rs pyropust/__init__.pyi pyropust/pyropust_native.pyi; then
+    echo "❌ Generated code is out of date. Run 'makers gen-all && makers fmt-all' to update."
     exit 1
 fi
 echo "✅ Generated code is up-to-date"
@@ -37,7 +47,7 @@ run_task = "all"
 
 [tasks.all]
 description = "Build and run format, lint, and test for both Rust and Python"
-dependencies = ["gen", "dev", "fmt-all", "lint-all", "test-all"]
+dependencies = ["gen-all", "dev", "fmt-all", "lint-all", "test-all"]
 
 [tasks.fmt-all]
 description = "Format both Rust and Python code"

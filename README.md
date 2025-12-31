@@ -67,7 +67,7 @@ res = (
 print(res.unwrap())  # "Value is 246"
 ```
 
-> [!TIP] > **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
+> [!TIP] **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
 >
 > ```python
 > from pyropust import Ok, Err, Result
@@ -127,17 +127,19 @@ else:
 Pyropust provides built-in operators to handle common data tasks safely in Rust, while allowing flexible escape hatches to Python.
 
 #### Core Operators
+
 - **`Op.json_decode()`**: Enables a **Turbo JSON Path** (high-performance Rust parsing) when used as the first operator in a Blueprint.
 - **`Op.map_py(fn)`**: Runs a custom Python callback within the pipeline. It’s a "safety hatch"—if the callback raises an exception, it is caught and converted into a `RopustError` (code: `py_exception`) with the original traceback stored in `metadata["py_traceback"]`.
 - **Built-in logic**: Includes `as_str()`, `as_int()`, `split()`, `index()`, `get()`, and `to_uppercase()`. See [docs/operations.md](docs/operations.md) for the full list.
 
 #### Design Principles
+
 - **Type-safe construction**: `Blueprint.for_type(T)` is a helper for static type checkers (Pyright/Mypy). It provides zero-runtime-overhead type hinting.
 - **Exception Bridge**: Use `exception_to_ropust_error()` to normalize external exceptions (like `requests.Error`) into a consistent `RopustError` format.
 
-> [!NOTE]
-> **Why a shared error format?**
+> [!NOTE] > **Why a shared error format?**
 > By unifying errors into `RopustError`, you get a consistent interface across Python and Rust. You can reliably access fields like `path`, `expected`, and `got` without losing context (like Python tracebacks) during pipeline orchestration. See [docs/errors.md](docs/errors.md) for details.
+
 ## Syntactic Sugar: `@do` Decorator
 
 Generator-based short-circuiting reproduces Rust's `?` operator in Python.

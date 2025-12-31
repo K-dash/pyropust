@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "K-dash" }]
 license = { text = "MIT" }
+keywords = ["rust", "result", "option", "error-handling", "type-safety", "pyo3"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -21,6 +22,11 @@ classifiers = [
   "Programming Language :: Rust",
   "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/K-dash/pyropust"
+Repository = "https://github.com/K-dash/pyropust"
+Issues = "https://github.com/K-dash/pyropust/issues"
 
 [project.optional-dependencies]
 dev = [

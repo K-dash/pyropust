@@ -15,8 +15,8 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ```bash
 # Clone the repository
-git clone https://github.com/USERNAME/rope.git
-cd rope
+git clone https://github.com/K-dash/pyropust.git
+cd pyropust
 
 # Install Python dependencies
 uv sync
@@ -27,16 +27,18 @@ makers dev
 
 ## Development Commands
 
-All development tasks are managed via `cargo-make`. Run `makers <task>` to execute a task.
+All development tasks are managed via `cargo-make`. In practice, contributors should use `makers` for nearly everything.
 
-### Build Tasks
+### Recommended workflow
 
 ```bash
-makers dev               # Development build (maturin develop)
-makers build             # Same as dev
-makers build-release     # Build release wheel
-makers clean             # Clean all build artifacts
+makers                  # Full pipeline (gen + build + format + lint + test)
+makers dev              # Faster dev build (maturin develop)
+makers gen              # Regenerate operator bindings after editing kind.rs
+makers clean            # Clean build artifacts
 ```
+
+If you need a specific task beyond the above, check `Makefile.toml` for the full list.
 
 ### Code Generation
 
@@ -66,7 +68,7 @@ MyOp { arg: String },
 
 2. Add implementation to `src/ops/apply.rs`
 3. Run `makers gen` to regenerate code
-4. Run `makers all` to verify everything works
+4. Run `makers` to verify everything works
 
 **When adding a new namespace (e.g., `@ns json`):**
 
@@ -77,43 +79,7 @@ MyOp { arg: String },
    - `src/lib.rs` (adds `m.add_class::<OpJson>()`)
    - `pyropust/__init__.pyi` (adds type stubs)
 3. **Manual step**: Add `OpJson` to the `use py::{...}` import in `src/lib.rs`
-4. Run `makers all` to verify everything works
-
-### Formatting
-
-```bash
-makers rust-fmt          # Format Rust code
-makers rust-fmt-check    # Check Rust formatting
-makers ruff-fmt          # Format Python code
-makers ruff-fmt-check    # Check Python formatting
-makers fmt-all           # Format all code (Rust + Python)
-```
-
-### Linting
-
-```bash
-makers rust-clippy       # Run Rust linter (clippy)
-makers ruff              # Run Python linter (ruff)
-makers lint-all          # Run all linters
-```
-
-### Testing
-
-```bash
-makers rust-test         # Run Rust unit tests
-makers pytest            # Run Python tests
-makers mypy              # Run MyPy type checker (strict)
-makers pyright           # Run Pyright type checker (strict)
-makers test-all          # Run all tests (Rust + Python)
-```
-
-### CI/Complete Checks
-
-```bash
-makers check             # Run all checks (format, lint, test, gen)
-makers all               # Run complete pipeline (gen + dev + check)
-makers ci                # Same as all
-```
+4. Run `makers` to verify everything works
 
 ## Code Generation System
 
@@ -168,67 +134,12 @@ The CI automatically checks if generated code is up-to-date:
 - `check-generated` job runs `makers gen` and verifies no diffs
 - PRs that modify `kind.rs` without running `makers gen` will fail
 
-## Project Structure
-
-```
-pyropust/
-├── .github/
-│   └── workflows/
-│       └── ci.yml           # GitHub Actions CI
-├── pyropust/                  # Python package
-│   ├── __init__.py          # Public API
-│   ├── __init__.pyi         # PEP 561 type stubs
-│   ├── do.py                # @do decorator
-│   ├── pyropust_native.pyi    # Internal native module stubs
-│   └── py.typed             # PEP 561 marker
-├── src/                     # Rust implementation
-│   ├── lib.rs               # PyO3 module definition
-│   ├── data/                # Value type and Python conversion
-│   ├── ops/                 # Operator implementations
-│   │   ├── kind.rs          # Operator metadata (SSOT)
-│   │   ├── apply.rs         # Operator execution logic
-│   │   └── error.rs         # Error handling
-│   └── py/                  # PyO3 exposed classes
-│       ├── blueprint.rs     # Blueprint class
-│       ├── error.rs         # RopustError class
-│       ├── op_generated.rs  # Generated Op class
-│       ├── operator.rs      # Operator class
-│       └── result.rs        # Result/Option classes
-├── tests/
-│   ├── test_blueprint.py    # Blueprint runtime tests
-│   ├── test_runtime.py      # Result/Option tests
-│   └── typing/              # Type checker tests
-│       ├── test_typing_mypy.py
-│       └── test_typing_pyright.py
-├── tools/
-│   └── gen_ops.py           # Code generator
-├── Cargo.toml               # Rust dependencies
-├── pyproject.toml           # Python project config
-├── Makefile.toml            # cargo-make task definitions
-└── rust-toolchain.toml      # Rust version pin
-```
-
 ## Type Safety Principles
 
 1. **`Op.assert_*` methods are validators, not converters**: They return `Err(RopustError)` if preconditions aren't met
 2. **`Op.index` / `Op.get` return `object`**: Use `Op.expect_str()` or similar to narrow types
 3. **`.pipe()` only connects compatible types**: Type checkers verify the pipeline at build time
 4. **For dynamic input, use guards**: `Blueprint.any().guard_str()` explicitly narrows types
-
-## Testing Guidelines
-
-### Running Tests
-
-```bash
-# All tests
-makers test-all
-
-# Specific test suites
-makers pytest              # Python runtime tests
-makers mypy                # Type checking with MyPy
-makers pyright             # Type checking with Pyright
-makers rust-test           # Rust unit tests
-```
 
 ### Type Checker Tests
 
@@ -244,13 +155,7 @@ assert_type(bp, Blueprint[str, object])
 
 ## CI Pipeline
 
-The CI runs three parallel jobs:
-
-1. **check-generated**: Verifies generated code is up-to-date
-2. **rust**: Runs `cargo fmt`, `clippy`, and `test`
-3. **python**: Runs Ruff, MyPy, Pyright, and Pytest
-
-All jobs must pass for a PR to be merged.
+CI runs the same `makers` pipeline used locally, so if it passes on your machine, it should pass in CI.
 
 ## Common Issues
 

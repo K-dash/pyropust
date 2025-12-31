@@ -182,6 +182,8 @@ if TYPE_CHECKING:
 
     # Core operators (len is universal: str/bytes/list/map)
     assert_type(Op.len(), Operator[object, int])
+    assert_type(Op.is_null(), Operator[object, bool])
+    assert_type(Op.is_empty(), Operator[object, bool])
 
     # Sequence operators
     assert_type(Op.index(0), Operator[Sequence[object], object])
@@ -192,6 +194,8 @@ if TYPE_CHECKING:
     # Mapping operators
     assert_type(Op.get("key"), Operator[Mapping[str, object], object])
     assert_type(Op.get_or("key", 0), Operator[Mapping[str, int], int])
+    assert_type(Op.keys(), Operator[Mapping[str, object], list[str]])
+    assert_type(Op.values(), Operator[Mapping[str, object], list[object]])
 
     # Coercion operators
     assert_type(Op.assert_str(), Operator[object, str])
@@ -224,12 +228,18 @@ if TYPE_CHECKING:
     # Op.map namespace
     assert_type(Op.map.get("key"), Operator[Mapping[str, object], object])
     assert_type(Op.map.get_or("key", 0), Operator[Mapping[str, int], int])
+    assert_type(Op.map.keys(), Operator[Mapping[str, object], list[str]])
+    assert_type(Op.map.values(), Operator[Mapping[str, object], list[object]])
 
     # Op.coerce namespace
     assert_type(Op.coerce.assert_str(), Operator[object, str])
     assert_type(Op.coerce.expect_str(), Operator[object, str])
     assert_type(Op.coerce.as_str(), Operator[object, str])
     assert_type(Op.coerce.json_decode(), Operator[str | bytes, Mapping[str, object]])
+
+    # Op.core namespace
+    assert_type(Op.core.is_null(), Operator[object, bool])
+    assert_type(Op.core.is_empty(), Operator[object, bool])
 
     # Op.core namespace
     assert_type(Op.core.map_py(to_len), Operator[str, int])

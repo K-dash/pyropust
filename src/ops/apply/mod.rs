@@ -41,6 +41,8 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
         OperatorKind::First => seq::first(op_name, value),
         OperatorKind::Last => seq::last(op_name, value),
         OperatorKind::GetKey { key } => map::get_key(op_name, value, key),
+        OperatorKind::Keys => map::keys(op_name, value),
+        OperatorKind::Values => map::values(op_name, value),
         OperatorKind::GetOr { .. } => Err(OpError {
             kind: ErrorKind::Internal,
             code: "get_or_runtime",
@@ -50,6 +52,8 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
             expected: None,
             got: None,
         }),
+        OperatorKind::IsNull => core::is_null(op_name, value),
+        OperatorKind::IsEmpty => core::is_empty(op_name, value),
         OperatorKind::Len => core::len(op_name, value),
     }
 }

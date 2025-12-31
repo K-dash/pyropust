@@ -412,3 +412,29 @@ def test_get_or_default() -> None:
     res = run(bp, {"present": 1})
     assert res.is_ok()
     assert res.unwrap() == 5
+
+
+def test_map_keys_values() -> None:
+    bp_keys = Blueprint.for_type(dict[str, object]).pipe(Op.keys())
+    res_keys = run(bp_keys, {"a": 1, "b": 2})
+    assert res_keys.is_ok()
+    assert sorted(res_keys.unwrap()) == ["a", "b"]
+
+    bp_values = Blueprint.for_type(dict[str, int]).pipe(Op.values())
+    res_values = run(bp_values, {"a": 1, "b": 2})
+    assert res_values.is_ok()
+    values = res_values.unwrap()
+    assert 1 in values
+    assert 2 in values
+
+
+def test_is_null_is_empty() -> None:
+    bp_null = Blueprint.for_type(object).pipe(Op.is_null())
+    res = run(bp_null, None)
+    assert res.is_ok()
+    assert res.unwrap() is True
+
+    bp_empty = Blueprint.for_type(object).pipe(Op.is_empty())
+    res = run(bp_empty, "")
+    assert res.is_ok()
+    assert res.unwrap() is True

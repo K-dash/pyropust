@@ -15,3 +15,15 @@ pub(super) fn get_key(op: &'static str, value: Value, key: &str) -> Result<Value
         got: None,
     })
 }
+
+pub(super) fn keys(op: &'static str, value: Value) -> Result<Value, OpError> {
+    let map = expect_map_value(op, value)?;
+    Ok(Value::List(
+        map.keys().cloned().map(Value::Str).collect::<Vec<Value>>(),
+    ))
+}
+
+pub(super) fn values(op: &'static str, value: Value) -> Result<Value, OpError> {
+    let map = expect_map_value(op, value)?;
+    Ok(Value::List(map.values().cloned().collect()))
+}

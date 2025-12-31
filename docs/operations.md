@@ -105,12 +105,32 @@ This document lists the operators available in `Op` and their behavior. Operator
   - Output: object
   - Behavior: returns the value for the key, or the provided default if missing. The default is converted using the same rules as `run()` input conversion.
 
+- `keys()`
+  - Input: Mapping[str, object]
+  - Output: list[str]
+  - Behavior: returns all keys as a list of strings.
+
+- `values()`
+  - Input: Mapping[str, object]
+  - Output: list[object]
+  - Behavior: returns all values as a list.
+
 ## Core
 
 - `len()`
   - Input: object
   - Output: int
   - Behavior: works on str/bytes/list/map; errors on other types.
+
+- `is_null()`
+  - Input: object
+  - Output: bool
+  - Behavior: returns true if the value is null.
+
+- `is_empty()`
+  - Input: object
+  - Output: bool
+  - Behavior: returns true for empty str/bytes/list/map.
 
 - `map_py(func: Callable[[T], U])`
   - Input: object

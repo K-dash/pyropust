@@ -82,6 +82,20 @@ impl OpCore {
     }
 
     #[staticmethod]
+    pub fn is_null() -> Operator {
+        Operator {
+            kind: OperatorKind::IsNull,
+        }
+    }
+
+    #[staticmethod]
+    pub fn is_empty() -> Operator {
+        Operator {
+            kind: OperatorKind::IsEmpty,
+        }
+    }
+
+    #[staticmethod]
     pub fn len() -> Operator {
         Operator {
             kind: OperatorKind::Len,
@@ -106,6 +120,20 @@ impl OpMap {
     pub fn get_or(key: String, default: Py<PyAny>) -> Operator {
         Operator {
             kind: OperatorKind::GetOr { key, default },
+        }
+    }
+
+    #[staticmethod]
+    pub fn keys() -> Operator {
+        Operator {
+            kind: OperatorKind::Keys,
+        }
+    }
+
+    #[staticmethod]
+    pub fn values() -> Operator {
+        Operator {
+            kind: OperatorKind::Values,
         }
     }
 }
@@ -281,6 +309,18 @@ impl Op {
 
     /// Alias for backward compatibility
     #[staticmethod]
+    pub fn is_null() -> Operator {
+        OpCore::is_null()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn is_empty() -> Operator {
+        OpCore::is_empty()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
     pub fn len() -> Operator {
         OpCore::len()
     }
@@ -295,6 +335,18 @@ impl Op {
     #[staticmethod]
     pub fn get_or(key: String, default: Py<PyAny>) -> Operator {
         OpMap::get_or(key, default)
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn keys() -> Operator {
+        OpMap::keys()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn values() -> Operator {
+        OpMap::values()
     }
 
     /// Alias for backward compatibility

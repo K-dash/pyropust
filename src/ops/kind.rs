@@ -107,10 +107,30 @@ pub enum OperatorKind {
     /// @param default:object
     GetOr { key: String, default: Py<PyAny> },
 
+    /// @op name=keys py=keys
+    /// @sig in=Mapping[str, object] out=list[str]
+    /// @ns map
+    Keys,
+
+    /// @op name=values py=values
+    /// @sig in=Mapping[str, object] out=list[object]
+    /// @ns map
+    Values,
+
     /// @op name=to_uppercase py=to_uppercase
     /// @sig in=str out=str
     /// @ns text
     ToUppercase,
+
+    /// @op name=is_null py=is_null
+    /// @sig in=object out=bool
+    /// @ns core
+    IsNull,
+
+    /// @op name=is_empty py=is_empty
+    /// @sig in=object out=bool
+    /// @ns core
+    IsEmpty,
 
     /// @op name=len py=len
     /// @sig in=object out=int
@@ -156,7 +176,11 @@ impl Clone for OperatorKind {
                 key: key.clone(),
                 default: default.clone_ref(py),
             }),
+            OperatorKind::Keys => OperatorKind::Keys,
+            OperatorKind::Values => OperatorKind::Values,
             OperatorKind::ToUppercase => OperatorKind::ToUppercase,
+            OperatorKind::IsNull => OperatorKind::IsNull,
+            OperatorKind::IsEmpty => OperatorKind::IsEmpty,
             OperatorKind::Len => OperatorKind::Len,
         }
     }
@@ -184,7 +208,11 @@ impl OperatorKind {
             OperatorKind::Last => "Last",
             OperatorKind::GetKey { .. } => "GetKey",
             OperatorKind::GetOr { .. } => "GetOr",
+            OperatorKind::Keys => "Keys",
+            OperatorKind::Values => "Values",
             OperatorKind::ToUppercase => "ToUppercase",
+            OperatorKind::IsNull => "IsNull",
+            OperatorKind::IsEmpty => "IsEmpty",
             OperatorKind::Len => "Len",
         }
     }

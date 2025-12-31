@@ -91,3 +91,29 @@ def test_exception_to_rope_error() -> None:
         assert isinstance(err, RopeError)
         assert err.code == "py_exception"
         assert "py_traceback" in err.metadata
+
+
+def test_rope_error_dict_roundtrip() -> None:
+    def raise_value_error() -> None:
+        raise ValueError("boom")
+
+    err: RopeError | None = None
+    try:
+        raise_value_error()
+    except ValueError as exc:
+        err = exception_to_rope_error(exc)
+
+    assert err is not None
+    data = err.to_dict()
+    parsed = RopeError.from_dict(data)
+
+    assert parsed.kind == err.kind
+    assert parsed.code == err.code
+    assert parsed.message == err.message
+    assert parsed.metadata["exception"] == "ValueError"
+    assert "py_traceback" in parsed.metadata
+
+
+def test_rope_error_from_dict_missing_fields() -> None:
+    with pytest.raises(TypeError, match="missing 'kind' field"):
+        RopeError.from_dict({"code": "missing", "message": "oops"})

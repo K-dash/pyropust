@@ -62,3 +62,30 @@ pub(super) fn last(op: &'static str, value: Value) -> Result<Value, OpError> {
         got: None,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{first, last, slice};
+    use crate::data::Value;
+    use crate::ops::ErrorKind;
+
+    #[test]
+    fn slice_out_of_range() {
+        let value = Value::List(vec![Value::Int(1), Value::Int(2)]);
+        let err = slice("Slice", value, 1, 3).unwrap_err();
+        assert!(matches!(err.kind, ErrorKind::InvalidInput));
+        assert_eq!(err.code, "slice_out_of_range");
+    }
+
+    #[test]
+    fn first_last_empty_sequence() {
+        let value = Value::List(vec![]);
+        let err = first("First", value.clone()).unwrap_err();
+        assert!(matches!(err.kind, ErrorKind::NotFound));
+        assert_eq!(err.code, "empty_sequence");
+
+        let err = last("Last", value).unwrap_err();
+        assert!(matches!(err.kind, ErrorKind::NotFound));
+        assert_eq!(err.code, "empty_sequence");
+    }
+}

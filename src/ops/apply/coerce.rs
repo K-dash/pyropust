@@ -183,3 +183,18 @@ pub(super) fn json_decode(op: &'static str, value: Value) -> Result<Value, OpErr
 
     Ok(serde_to_value(parsed))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::as_str;
+    use crate::data::Value;
+    use crate::ops::ErrorKind;
+
+    #[test]
+    fn as_str_invalid_utf8() {
+        let value = Value::Bytes(vec![0xff, 0xfe]);
+        let err = as_str("AsStr", value).unwrap_err();
+        assert!(matches!(err.kind, ErrorKind::InvalidInput));
+        assert_eq!(err.code, "invalid_utf8");
+    }
+}

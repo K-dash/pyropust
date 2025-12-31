@@ -33,3 +33,17 @@ pub(super) fn is_empty(op: &'static str, value: Value) -> Result<Value, OpError>
         )),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::is_empty;
+    use crate::data::Value;
+    use crate::ops::ErrorKind;
+
+    #[test]
+    fn is_empty_type_mismatch() {
+        let err = is_empty("IsEmpty", Value::Int(1)).unwrap_err();
+        assert!(matches!(err.kind, ErrorKind::InvalidInput));
+        assert_eq!(err.code, "type_mismatch");
+    }
+}

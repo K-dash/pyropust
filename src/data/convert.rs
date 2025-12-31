@@ -149,3 +149,40 @@ pub fn serde_to_value(value: SerdeValue) -> Value {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::serde_to_value;
+    use crate::data::Value;
+    use serde_json::json;
+
+    #[test]
+    fn serde_to_value_nested_structure() {
+        let input = json!({
+            "a": 1,
+            "b": [true, null, 3.5],
+        });
+
+        let value = serde_to_value(input);
+        let Value::Map(map) = value else {
+            panic!("expected map");
+        };
+
+        match map.get("a") {
+            Some(Value::Int(n)) => assert_eq!(*n, 1),
+            other => panic!("unexpected a value: {:?}", other),
+        }
+
+        match map.get("b") {
+            Some(Value::List(items)) => {
+                assert!(matches!(items.first(), Some(Value::Bool(true))));
+                assert!(matches!(items.get(1), Some(Value::Null)));
+                match items.get(2) {
+                    Some(Value::Float(f)) => assert!((*f - 3.5).abs() < 0.0001),
+                    other => panic!("unexpected b[2]: {:?}", other),
+                }
+            }
+            other => panic!("unexpected b value: {:?}", other),
+        }
+    }
+}

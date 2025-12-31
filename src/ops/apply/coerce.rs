@@ -15,6 +15,34 @@ pub(super) fn expect_str(op: &'static str, value: Value) -> Result<Value, OpErro
     Ok(Value::Str(text))
 }
 
+pub(super) fn as_str(op: &'static str, value: Value) -> Result<Value, OpError> {
+    let text = match value {
+        Value::Str(s) => s,
+        Value::Bytes(bytes) => String::from_utf8(bytes).map_err(|_| OpError {
+            kind: ErrorKind::InvalidInput,
+            code: "invalid_utf8",
+            message: "Failed to decode bytes as UTF-8",
+            op,
+            path: Vec::new(),
+            expected: Some("utf-8 bytes"),
+            got: None,
+        })?,
+        Value::Bool(b) => b.to_string(),
+        Value::Int(n) => n.to_string(),
+        Value::Float(f) => f.to_string(),
+        Value::DateTime(dt) => dt.to_rfc3339(),
+        Value::Null => "null".to_string(),
+        other => {
+            return Err(OpError::type_mismatch(
+                op,
+                "str|bytes|bool|int|float|datetime|null",
+                other.type_name().to_string(),
+            ))
+        }
+    };
+    Ok(Value::Str(text))
+}
+
 pub(super) fn as_int(op: &'static str, value: Value) -> Result<Value, OpError> {
     match value {
         Value::Int(n) => Ok(Value::Int(n)),

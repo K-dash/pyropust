@@ -23,6 +23,26 @@ pub(super) fn split(op: &'static str, value: Value, delim: &str) -> Result<Value
     ))
 }
 
+pub(super) fn trim(op: &'static str, value: Value) -> Result<Value, OpError> {
+    let text = expect_str_value(op, value)?;
+    Ok(Value::Str(text.trim().to_string()))
+}
+
+pub(super) fn lower(op: &'static str, value: Value) -> Result<Value, OpError> {
+    let text = expect_str_value(op, value)?;
+    Ok(Value::Str(text.to_lowercase()))
+}
+
+pub(super) fn replace(
+    op: &'static str,
+    value: Value,
+    old: &str,
+    new: &str,
+) -> Result<Value, OpError> {
+    let text = expect_str_value(op, value)?;
+    Ok(Value::Str(text.replace(old, new)))
+}
+
 pub(super) fn to_uppercase(op: &'static str, value: Value) -> Result<Value, OpError> {
     let text = expect_str_value(op, value)?;
     Ok(Value::Str(text.to_uppercase()))

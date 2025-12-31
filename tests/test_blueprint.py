@@ -374,3 +374,41 @@ def test_map_py_invalid_return() -> None:
     assert res.is_err()
     err = res.unwrap_err()
     assert err.code == "py_return_invalid"
+
+
+def test_text_ops() -> None:
+    bp = Blueprint.for_type(str).pipe(Op.trim()).pipe(Op.lower()).pipe(Op.replace(" ", "-"))
+    res = run(bp, "  Hello World  ")
+    assert res.is_ok()
+    assert res.unwrap() == "hello-world"
+
+
+def test_as_str_conversion() -> None:
+    bp = Blueprint.for_type(object).pipe(Op.as_str())
+    res = run(bp, 123)
+    assert res.is_ok()
+    assert res.unwrap() == "123"
+
+
+def test_seq_slice_first_last() -> None:
+    bp_slice = Blueprint.for_type(list[object]).pipe(Op.slice(1, 3))
+    res_slice = run(bp_slice, [1, 2, 3, 4])
+    assert res_slice.is_ok()
+    assert res_slice.unwrap() == [2, 3]
+
+    bp_first = Blueprint.for_type(list[object]).pipe(Op.first())
+    res_first = run(bp_first, ["a", "b"])
+    assert res_first.is_ok()
+    assert res_first.unwrap() == "a"
+
+    bp_last = Blueprint.for_type(list[object]).pipe(Op.last())
+    res_last = run(bp_last, ["a", "b"])
+    assert res_last.is_ok()
+    assert res_last.unwrap() == "b"
+
+
+def test_get_or_default() -> None:
+    bp = Blueprint.for_type(dict[str, int]).pipe(Op.get_or("missing", 5))
+    res = run(bp, {"present": 1})
+    assert res.is_ok()
+    assert res.unwrap() == 5

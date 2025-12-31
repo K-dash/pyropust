@@ -16,6 +16,7 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
     match op {
         OperatorKind::AssertStr => coerce::assert_str(op_name, value),
         OperatorKind::ExpectStr => coerce::expect_str(op_name, value),
+        OperatorKind::AsStr => coerce::as_str(op_name, value),
         OperatorKind::AsInt => coerce::as_int(op_name, value),
         OperatorKind::AsFloat => coerce::as_float(op_name, value),
         OperatorKind::AsBool => coerce::as_bool(op_name, value),
@@ -31,9 +32,24 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
             got: None,
         }),
         OperatorKind::Split { delim } => text::split(op_name, value, delim),
+        OperatorKind::Trim => text::trim(op_name, value),
+        OperatorKind::Lower => text::lower(op_name, value),
+        OperatorKind::Replace { old, new } => text::replace(op_name, value, old, new),
         OperatorKind::ToUppercase => text::to_uppercase(op_name, value),
         OperatorKind::Index { idx } => seq::index(op_name, value, *idx),
+        OperatorKind::Slice { start, end } => seq::slice(op_name, value, *start, *end),
+        OperatorKind::First => seq::first(op_name, value),
+        OperatorKind::Last => seq::last(op_name, value),
         OperatorKind::GetKey { key } => map::get_key(op_name, value, key),
+        OperatorKind::GetOr { .. } => Err(OpError {
+            kind: ErrorKind::Internal,
+            code: "get_or_runtime",
+            message: "get_or is only supported inside run()",
+            op: op_name,
+            path: Vec::new(),
+            expected: None,
+            got: None,
+        }),
         OperatorKind::Len => core::len(op_name, value),
     }
 }

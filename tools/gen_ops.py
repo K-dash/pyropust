@@ -36,6 +36,7 @@ PY_TO_RUST_TYPE = {
     "str": "String",
     "int": "usize",
     "callable": "Py<PyAny>",
+    "object": "Py<PyAny>",
 }
 
 
@@ -179,6 +180,8 @@ def _make_stub_signature(spec: OpSpec, indent: str = "") -> str:
     """Generate a Python stub method signature."""
     if spec.py_name == "map_py":
         return f"{indent}def map_py[T, U](func: Callable[[T], U]) -> Operator[T, U]: ..."
+    if spec.py_name == "get_or":
+        return f"{indent}def get_or[T](key: str, default: T) -> Operator[Mapping[str, T], T]: ..."
     param_list = ", ".join(f"{p.name}: {p.py_type}" for p in spec.params)
     ret_type = f"Operator[{spec.in_type}, {spec.out_type}]"
     return f"{indent}def {spec.py_name}({param_list}) -> {ret_type}: ..."

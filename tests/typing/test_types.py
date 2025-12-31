@@ -176,19 +176,27 @@ if TYPE_CHECKING:
     # Text operators
     assert_type(Op.split("@"), Operator[str, list[str]])
     assert_type(Op.to_uppercase(), Operator[str, str])
+    assert_type(Op.trim(), Operator[str, str])
+    assert_type(Op.lower(), Operator[str, str])
+    assert_type(Op.replace("a", "b"), Operator[str, str])
 
     # Core operators (len is universal: str/bytes/list/map)
     assert_type(Op.len(), Operator[object, int])
 
     # Sequence operators
     assert_type(Op.index(0), Operator[Sequence[object], object])
+    assert_type(Op.slice(0, 1), Operator[Sequence[object], list[object]])
+    assert_type(Op.first(), Operator[Sequence[object], object])
+    assert_type(Op.last(), Operator[Sequence[object], object])
 
     # Mapping operators
     assert_type(Op.get("key"), Operator[Mapping[str, object], object])
+    assert_type(Op.get_or("key", 0), Operator[Mapping[str, int], int])
 
     # Coercion operators
     assert_type(Op.assert_str(), Operator[object, str])
     assert_type(Op.expect_str(), Operator[object, str])
+    assert_type(Op.as_str(), Operator[object, str])
     assert_type(Op.json_decode(), Operator[str | bytes, Mapping[str, object]])
 
     def to_len(value: str) -> int:
@@ -203,16 +211,24 @@ if TYPE_CHECKING:
     # Op.text namespace
     assert_type(Op.text.split("@"), Operator[str, list[str]])
     assert_type(Op.text.to_uppercase(), Operator[str, str])
+    assert_type(Op.text.trim(), Operator[str, str])
+    assert_type(Op.text.lower(), Operator[str, str])
+    assert_type(Op.text.replace("a", "b"), Operator[str, str])
 
     # Op.seq namespace
     assert_type(Op.seq.index(0), Operator[Sequence[object], object])
+    assert_type(Op.seq.slice(0, 1), Operator[Sequence[object], list[object]])
+    assert_type(Op.seq.first(), Operator[Sequence[object], object])
+    assert_type(Op.seq.last(), Operator[Sequence[object], object])
 
     # Op.map namespace
     assert_type(Op.map.get("key"), Operator[Mapping[str, object], object])
+    assert_type(Op.map.get_or("key", 0), Operator[Mapping[str, int], int])
 
     # Op.coerce namespace
     assert_type(Op.coerce.assert_str(), Operator[object, str])
     assert_type(Op.coerce.expect_str(), Operator[object, str])
+    assert_type(Op.coerce.as_str(), Operator[object, str])
     assert_type(Op.coerce.json_decode(), Operator[str | bytes, Mapping[str, object]])
 
     # Op.core namespace

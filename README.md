@@ -102,46 +102,13 @@ else:
     print(f"Error: {result.unwrap_err().message}")
 ```
 
-### Turbo JSON Path (`Op.json_decode`)
+### Operators
 
-If the first operator is `Op.json_decode()`, `run()` parses JSON directly in Rust (`serde_json`) without creating a Python `dict` first. This reduces overhead for large payloads.
+Supported operators are listed in [docs](docs/operations.md).
 
-```python
-from pyrope import Blueprint, Op, run
+`Op.json_decode()` enables a fast Rust JSON path when it is the first operator in a Blueprint. `Op.map_py(...)` runs a Python callback inside the pipeline (slower, but flexible). If the callback raises, the error becomes `RopeError` with code `py_exception`, and the traceback is stored in `err.metadata["py_traceback"]`.
 
-bp = (
-    Blueprint.for_type(str)
-    .pipe(Op.json_decode())
-    .pipe(Op.get("name"))
-    .pipe(Op.expect_str())
-    .pipe(Op.to_uppercase())
-)
-
-res = run(bp, '{"name": "alice"}')
-print(res.unwrap())  # "ALICE"
-```
-
-### Escape Hatch: `Op.map_py(...)`
-
-`Op.map_py` lets you run a Python function inside a Blueprint. It trades performance for flexibility: each call crosses the Python↔Rust boundary.
-
-```python
-from pyrope import Blueprint, Op, run
-
-def reverse_text(value: str) -> str:
-    return "".join(reversed(value))
-
-bp = (
-    Blueprint.for_type(str)
-    .pipe(Op.map_py(reverse_text))
-    .pipe(Op.to_uppercase())
-)
-
-res = run(bp, "hello")
-print(res.unwrap())  # "OLLEH"
-```
-
-If the Python function raises, the error becomes a `RopeError` with code `py_exception`. The traceback is available in `err.metadata["py_traceback"]`.
+Note: `Blueprint.for_type(...)` is a type-hinting helper for Python type checkers. It does not enforce runtime type checks.
 
 ### Benchmark (reproducible, no extra deps)
 

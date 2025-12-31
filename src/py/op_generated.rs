@@ -26,6 +26,13 @@ impl OpCoerce {
     }
 
     #[staticmethod]
+    pub fn as_str() -> Operator {
+        Operator {
+            kind: OperatorKind::AsStr,
+        }
+    }
+
+    #[staticmethod]
     pub fn as_int() -> Operator {
         Operator {
             kind: OperatorKind::AsInt,
@@ -94,6 +101,13 @@ impl OpMap {
             kind: OperatorKind::GetKey { key },
         }
     }
+
+    #[staticmethod]
+    pub fn get_or(key: String, default: Py<PyAny>) -> Operator {
+        Operator {
+            kind: OperatorKind::GetOr { key, default },
+        }
+    }
 }
 
 /// Namespace for seq operations
@@ -108,6 +122,27 @@ impl OpSeq {
             kind: OperatorKind::Index { idx },
         }
     }
+
+    #[staticmethod]
+    pub fn slice(start: usize, end: usize) -> Operator {
+        Operator {
+            kind: OperatorKind::Slice { start, end },
+        }
+    }
+
+    #[staticmethod]
+    pub fn first() -> Operator {
+        Operator {
+            kind: OperatorKind::First,
+        }
+    }
+
+    #[staticmethod]
+    pub fn last() -> Operator {
+        Operator {
+            kind: OperatorKind::Last,
+        }
+    }
 }
 
 /// Namespace for text operations
@@ -120,6 +155,27 @@ impl OpText {
     pub fn split(delim: String) -> Operator {
         Operator {
             kind: OperatorKind::Split { delim },
+        }
+    }
+
+    #[staticmethod]
+    pub fn trim() -> Operator {
+        Operator {
+            kind: OperatorKind::Trim,
+        }
+    }
+
+    #[staticmethod]
+    pub fn lower() -> Operator {
+        Operator {
+            kind: OperatorKind::Lower,
+        }
+    }
+
+    #[staticmethod]
+    pub fn replace(old: String, new: String) -> Operator {
+        Operator {
+            kind: OperatorKind::Replace { old, new },
         }
     }
 
@@ -183,6 +239,12 @@ impl Op {
 
     /// Alias for backward compatibility
     #[staticmethod]
+    pub fn as_str() -> Operator {
+        OpCoerce::as_str()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
     pub fn as_int() -> Operator {
         OpCoerce::as_int()
     }
@@ -231,14 +293,56 @@ impl Op {
 
     /// Alias for backward compatibility
     #[staticmethod]
+    pub fn get_or(key: String, default: Py<PyAny>) -> Operator {
+        OpMap::get_or(key, default)
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
     pub fn index(idx: usize) -> Operator {
         OpSeq::index(idx)
     }
 
     /// Alias for backward compatibility
     #[staticmethod]
+    pub fn slice(start: usize, end: usize) -> Operator {
+        OpSeq::slice(start, end)
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn first() -> Operator {
+        OpSeq::first()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn last() -> Operator {
+        OpSeq::last()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
     pub fn split(delim: String) -> Operator {
         OpText::split(delim)
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn trim() -> Operator {
+        OpText::trim()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn lower() -> Operator {
+        OpText::lower()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn replace(old: String, new: String) -> Operator {
+        OpText::replace(old, new)
     }
 
     /// Alias for backward compatibility

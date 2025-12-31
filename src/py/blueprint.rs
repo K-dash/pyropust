@@ -125,6 +125,12 @@ pub fn run(py: Python<'_>, blueprint: PyRef<'_, Blueprint>, input: Py<PyAny>) ->
                     Ok(value) => current = value,
                     Err(err) => return err,
                 },
+                OperatorKind::GetOr { key, default } => {
+                    match apply_get_or(py, key, default, current) {
+                        Ok(value) => current = value,
+                        Err(err) => return err,
+                    }
+                }
                 _ => match apply(op, current) {
                     Ok(value) => current = value,
                     Err(e) => return op_error_to_result(py, e),
@@ -138,6 +144,12 @@ pub fn run(py: Python<'_>, blueprint: PyRef<'_, Blueprint>, input: Py<PyAny>) ->
                     Ok(value) => current = value,
                     Err(err) => return err,
                 },
+                OperatorKind::GetOr { key, default } => {
+                    match apply_get_or(py, key, default, current) {
+                        Ok(value) => current = value,
+                        Err(err) => return err,
+                    }
+                }
                 _ => match apply(op, current) {
                     Ok(value) => current = value,
                     Err(e) => return op_error_to_result(py, e),
@@ -193,6 +205,40 @@ fn apply_map_py(py: Python<'_>, func: &Py<PyAny>, value: Value) -> Result<Value,
             Some(err.expected.to_string()),
             Some(err.got),
             Some(err.message.to_string()),
+        )),
+    }
+}
+
+fn apply_get_or(
+    py: Python<'_>,
+    key: &str,
+    default: &Py<PyAny>,
+    value: Value,
+) -> Result<Value, ResultObj> {
+    match value {
+        Value::Map(map) => {
+            if let Some(found) = map.get(key).cloned() {
+                return Ok(found);
+            }
+            match py_to_value(default.bind(py)) {
+                Ok(value) => Ok(value),
+                Err(err) => Err(rope_error(
+                    py,
+                    ErrorKind::InvalidInput,
+                    "default_invalid",
+                    "Default value is unsupported",
+                    None,
+                    Some("GetOr".to_string()),
+                    Vec::new(),
+                    Some(err.expected.to_string()),
+                    Some(err.got),
+                    Some(err.message.to_string()),
+                )),
+            }
+        }
+        other => Err(op_error_to_result(
+            py,
+            OpError::type_mismatch("GetOr", "map", other.type_name().to_string()),
         )),
     }
 }

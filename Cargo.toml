@@ -1,10 +1,10 @@
 [package]
-name = "pyrope"
+name = "pyropust"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "pyrope_native"
+name = "pyropust_native"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -13,4 +13,4 @@ chrono = "0.4"
 serde_json = "1.0"
 
 [package.metadata.maturin]
-name = "pyrope_native"
+name = "pyropust_native"

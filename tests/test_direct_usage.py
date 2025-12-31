@@ -7,7 +7,7 @@ These tests verify the README examples and cover methods not tested elsewhere:
 
 from __future__ import annotations
 
-from pyrope import Err, None_, Ok, Option, Result, Some
+from pyropust import Err, None_, Ok, Option, Result, Some
 
 
 class TestResultMap:

@@ -4,7 +4,7 @@ from collections.abc import Callable, Generator
 from functools import wraps
 from typing import TYPE_CHECKING, cast
 
-from .pyrope_native import Result
+from .pyropust_native import Result
 
 
 def do[**P, T, E, R](

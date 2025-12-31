@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Never, assert_type
 
-from pyrope import (
+from pyropust import (
     Blueprint,
     Err,
     ErrorKind,

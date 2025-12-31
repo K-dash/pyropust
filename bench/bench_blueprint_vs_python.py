@@ -7,7 +7,7 @@ import timeit
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from pyrope import Blueprint, Op, run
+from pyropust import Blueprint, Op, run
 
 
 @dataclass(frozen=True)

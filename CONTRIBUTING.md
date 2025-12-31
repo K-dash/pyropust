@@ -1,4 +1,4 @@
-# Contributing to pyrope
+# Contributing to pyropust
 
 Thank you for your interest in contributing! This document provides guidelines and instructions for development.
 
@@ -50,7 +50,7 @@ makers check-gen         # Verify generated code is up-to-date
 The generator (`tools/gen_ops.py`) reads metadata from `src/ops/kind.rs` and generates:
 
 1. `src/py/op_generated.rs` - Rust Op class implementation
-2. `pyrope/__init__.pyi` - Python type stubs
+2. `pyropust/__init__.pyi` - Python type stubs
 
 **When adding a new operator:**
 
@@ -75,7 +75,7 @@ MyOp { arg: String },
    - `src/py/op_generated.rs` (creates `OpJson` class)
    - `src/py/mod.rs` (adds export)
    - `src/lib.rs` (adds `m.add_class::<OpJson>()`)
-   - `pyrope/__init__.pyi` (adds type stubs)
+   - `pyropust/__init__.pyi` (adds type stubs)
 3. **Manual step**: Add `OpJson` to the `use py::{...}` import in `src/lib.rs`
 4. Run `makers all` to verify everything works
 
@@ -153,7 +153,7 @@ impl Op {
 }
 ```
 
-2. **Python Stub (`pyrope/__init__.pyi`)**:
+2. **Python Stub (`pyropust/__init__.pyi`)**:
 
 ```python
 class Op:
@@ -171,15 +171,15 @@ The CI automatically checks if generated code is up-to-date:
 ## Project Structure
 
 ```
-pyrope/
+pyropust/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml           # GitHub Actions CI
-├── pyrope/                  # Python package
+├── pyropust/                  # Python package
 │   ├── __init__.py          # Public API
 │   ├── __init__.pyi         # PEP 561 type stubs
 │   ├── do.py                # @do decorator
-│   ├── pyrope_native.pyi    # Internal native module stubs
+│   ├── pyropust_native.pyi    # Internal native module stubs
 │   └── py.typed             # PEP 561 marker
 ├── src/                     # Rust implementation
 │   ├── lib.rs               # PyO3 module definition
@@ -236,7 +236,7 @@ Located in `tests/typing/`, these tests verify that type checkers correctly infe
 
 ```python
 from typing import assert_type
-from pyrope import Blueprint, Op
+from pyropust import Blueprint, Op
 
 bp = Blueprint().pipe(Op.split(",")).pipe(Op.index(0))
 assert_type(bp, Blueprint[str, object])
@@ -260,7 +260,7 @@ Run `makers gen` and commit the changes:
 
 ```bash
 makers gen
-git add src/py/op_generated.rs pyrope/__init__.pyi
+git add src/py/op_generated.rs pyropust/__init__.pyi
 git commit -m "Update generated code"
 ```
 
@@ -268,7 +268,7 @@ git commit -m "Update generated code"
 
 1. Ensure metadata in `src/ops/kind.rs` is correct
 2. Run `makers gen` to regenerate stubs
-3. Check that `pyrope/__init__.pyi` has the correct types
+3. Check that `pyropust/__init__.pyi` has the correct types
 
 ### Build failures
 

@@ -4,7 +4,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import overload
 
-from .pyrope_native import Result, RopeError
+from .pyropust_native import Result, RopeError
 
 
 def _is_exception_type(value: object) -> bool:

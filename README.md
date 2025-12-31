@@ -1,4 +1,4 @@
-# pyrope
+# pyropust
 
 A proof-of-concept library that brings Rust's `Result` and `Option` types to Python, treating failures as values instead of exceptions.
 
@@ -6,7 +6,7 @@ The concept: "Drop a rope (type safety from Rust) into the dangerous freedom of 
 
 ## Who This Is For
 
-Pyrope is for Python developers who want explicit, type-safe control over error flow and data transformations, especially when bridging Python and Rust or when pipelines become hard to reason about with exceptions alone.
+Pyropust is for Python developers who want explicit, type-safe control over error flow and data transformations, especially when bridging Python and Rust or when pipelines become hard to reason about with exceptions alone.
 
 Common problems it helps with:
 - Making error propagation explicit and type-checked (Result/Option).
@@ -26,7 +26,7 @@ You can use `Result` and `Option` types directly for manual handling or function
 ### Manual Handling
 
 ```python
-from pyrope import Ok, Err, Result
+from pyropust import Ok, Err, Result
 
 def divide(a: int, b: int) -> Result[float, str]:
     if b == 0:
@@ -45,7 +45,7 @@ else:
 Avoid `if` checks by chaining operations.
 
 ```python
-from pyrope import Ok
+from pyropust import Ok
 
 res = (
     Ok("123")
@@ -59,7 +59,7 @@ print(res.unwrap())  # "Value is 246"
 > **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
 >
 > ```python
-> from pyrope import Ok, Err, Result
+> from pyropust import Ok, Err, Result
 >
 > def fetch_data() -> Result[int, str]:  # Declare error type here
 >     return Ok(42)
@@ -76,7 +76,7 @@ print(res.unwrap())  # "Value is 246"
 No more `AttributeError: 'NoneType' object has no attribute '...'`.
 
 ```python
-from pyrope import Some, None_, Option
+from pyropust import Some, None_, Option
 
 def find_user(user_id: int) -> Option[str]:
     return Some("Alice") if user_id == 1 else None_()
@@ -92,7 +92,7 @@ print(f"Hello, {name}!")  # Hello, Alice!
 Use `Blueprint` to define a typed, composable pipeline with explicit error handling. The primary value is clarity and type-safety across a sequence of operations. Performance can improve in some cases, but it is not guaranteed and should be treated as a secondary benefit.
 
 ```python
-from pyrope import Blueprint, Op, run
+from pyropust import Blueprint, Op, run
 
 # Define a pipeline
 bp = (
@@ -165,7 +165,7 @@ Blueprint is built in setup; timing measures run() only.
 Generator-based short-circuiting reproduces Rust's `?` operator in Python.
 
 ```python
-from pyrope import Ok, Result, do
+from pyropust import Ok, Result, do
 
 @do
 def process(value: str) -> Result[str, object]:
@@ -178,14 +178,14 @@ print(process("hello").unwrap())  # "Processed: HELLO"
 
 ## Border Control: Exception Interoperability
 
-Real-world Python code uses libraries like `requests`, `boto3`, and `sqlalchemy` that throw exceptions. pyrope provides tools to safely bridge between the "exception world" and the "Result world".
+Real-world Python code uses libraries like `requests`, `boto3`, and `sqlalchemy` that throw exceptions. pyropust provides tools to safely bridge between the "exception world" and the "Result world".
 
 ### Converting Exceptions to Results: `@catch`
 
 Use `@catch` to wrap exception-throwing code and convert it into safe `Result` values.
 
 ```python
-from pyrope import catch
+from pyropust import catch
 import requests
 
 # Wrap existing libraries that throw exceptions
@@ -207,12 +207,12 @@ else:
 
 - Wrapping third-party libraries that throw exceptions
 - Creating safe boundaries around risky I/O operations
-- Gradually introducing pyrope into existing codebases
+- Gradually introducing pyropust into existing codebases
 
 You can also use `@catch` without arguments to catch all exceptions, or use `Result.attempt()` directly:
 
 ```python
-from pyrope import Result
+from pyropust import Result
 
 # Inline exception handling
 result = Result.attempt(lambda: int("not-a-number"), ValueError)
@@ -224,7 +224,7 @@ result = Result.attempt(lambda: int("not-a-number"), ValueError)
 At the edges of your application (e.g., web framework endpoints), you may need to convert `Result` back into exceptions.
 
 ```python
-from pyrope import Result, do, catch
+from pyropust import Result, do, catch
 from fastapi import FastAPI, HTTPException
 
 app = FastAPI()

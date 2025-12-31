@@ -11,7 +11,7 @@ use pyo3::types::PyModule;
 use pyo3::wrap_pyfunction;
 
 #[pymodule]
-fn pyrope_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn pyropust_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ResultObj>()?;
     m.add_class::<OptionObj>()?;
     m.add_class::<ErrorKindObj>()?;

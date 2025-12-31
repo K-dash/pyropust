@@ -18,8 +18,8 @@ description = "Check if generated code is up-to-date"
 script = """
 python3 tools/gen_ops.py
 cargo fmt
-uv run ruff format pyrope/__init__.pyi --quiet
-if ! git diff --exit-code src/py/op_generated.rs src/py/mod.rs src/lib.rs pyrope/__init__.pyi; then
+uv run ruff format pyropust/__init__.pyi --quiet
+if ! git diff --exit-code src/py/op_generated.rs src/py/mod.rs src/lib.rs pyropust/__init__.pyi; then
     echo "❌ Generated code is out of date. Run 'makers gen && makers fmt-all' to update."
     exit 1
 fi
@@ -52,7 +52,7 @@ dependencies = ["rust-clippy", "ruff"]
 # =============================================================================
 
 [tasks.dev]
-description = "Build and install pyrope extension (development mode)"
+description = "Build and install pyropust extension (development mode)"
 command = "uv"
 args = ["run", "maturin", "develop"]
 
@@ -60,7 +60,7 @@ args = ["run", "maturin", "develop"]
 alias = "dev"
 
 [tasks.build-release]
-description = "Build pyrope wheel for distribution (release mode)"
+description = "Build pyropust wheel for distribution (release mode)"
 command = "uv"
 args = ["run", "maturin", "build", "--release"]
 
@@ -71,8 +71,8 @@ dependencies = ["rust-clean", "python-clean"]
 [tasks.python-clean]
 description = "Clean Python build artifacts"
 script = '''
-rm -rf pyrope/*.so
-rm -rf pyrope/__pycache__
+rm -rf pyropust/*.so
+rm -rf pyropust/__pycache__
 rm -rf tests/__pycache__
 rm -rf tests/typing/__pycache__
 rm -rf .pytest_cache

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from datetime import UTC, datetime
 
-from pyrope import Blueprint, ErrorKind, Ok, Op, Result, RopeError, do, run
+from pyropust import Blueprint, ErrorKind, Ok, Op, Result, RopeError, do, run
 
 
 def test_blueprint_execution() -> None:

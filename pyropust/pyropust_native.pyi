@@ -1,6 +1,6 @@
-# Internal stub file for pyrope_native module.
+# Internal stub file for pyropust_native module.
 # This file provides type information for internal imports only.
-# Public API types are defined in pyrope/__init__.pyi.
+# Public API types are defined in pyropust/__init__.pyi.
 
 from collections.abc import Callable, Mapping, Sequence
 from typing import Generic, Never, TypeVar

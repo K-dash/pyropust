@@ -2,7 +2,7 @@ from .catch import catch
 from .do import do
 
 try:
-    from .pyrope_native import (
+    from .pyropust_native import (
         Blueprint,
         Err,
         ErrorKind,
@@ -18,7 +18,7 @@ try:
     )
 except ModuleNotFoundError as exc:
     raise ModuleNotFoundError(
-        "pyrope extension module not found. Run `uv sync` or `maturin develop` to build it.",
+        "pyropust extension module not found. Run `uv sync` or `maturin develop` to build it.",
     ) from exc
 
 __all__ = [

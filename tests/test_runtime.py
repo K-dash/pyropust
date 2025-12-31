@@ -4,7 +4,7 @@ from collections.abc import Generator
 
 import pytest
 
-from pyrope import Err, None_, Ok, Result, RopeError, Some, catch, do
+from pyropust import Err, None_, Ok, Result, RopeError, Some, catch, do
 
 
 def test_result_ok_err() -> None:

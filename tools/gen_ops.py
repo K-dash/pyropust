@@ -3,7 +3,7 @@
 
 Parses src/ops/kind.rs and generates:
 1. src/py/op_generated.rs (Rust Op class)
-2. pyrope/__init__.pyi (Python stub Op class)
+2. pyropust/__init__.pyi (Python stub Op class)
 """
 # ruff: noqa: T201  # Allow print() in this tool
 
@@ -379,7 +379,7 @@ def _update_between_markers(content: str, begin: str, end: str, new_content: str
 
 
 def update_python_stub(pyi_path: Path, op_content: str, ns_content: str) -> None:
-    """Update pyrope/__init__.pyi with new Op and namespace stub content."""
+    """Update pyropust/__init__.pyi with new Op and namespace stub content."""
     content = pyi_path.read_text()
 
     # Update Op class content
@@ -434,7 +434,7 @@ def main() -> None:
     op_generated_rs = root / "src/py/op_generated.rs"
     mod_rs = root / "src/py/mod.rs"
     lib_rs = root / "src/lib.rs"
-    pyi = root / "pyrope/__init__.pyi"
+    pyi = root / "pyropust/__init__.pyi"
 
     print(f"📖 Parsing {kind_rs}...")
     specs = parse_kind_rs(kind_rs)

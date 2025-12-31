@@ -194,7 +194,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pyrope"
+name = "pyropust"
 version = "0.1.0"
 source = { editable = "." }
 

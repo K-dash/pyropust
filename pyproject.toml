@@ -83,6 +83,10 @@ ignore = [
   "PLR2004", # Magic value used in comparison
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Type checking test files use section divider comments for readability
+"tests/typing/*.py" = ["ERA001"]
+
 [tool.mypy]
 python_version = "3.14"
 strict = true

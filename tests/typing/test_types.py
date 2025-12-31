@@ -1,0 +1,285 @@
+"""Static type checking tests.
+
+These tests verify that type inference works correctly with both mypy and pyright.
+All code runs under TYPE_CHECKING to ensure it's only analyzed by the type checker,
+not executed at runtime.
+
+Run with:
+    uv run mypy --strict tests/typing/test_types.py
+    uv run pyright tests/typing/test_types.py
+"""
+
+from __future__ import annotations
+
+from collections.abc import Generator, Mapping, Sequence
+from typing import TYPE_CHECKING, Never, assert_type
+
+from pyrope import (
+    Blueprint,
+    Err,
+    ErrorKind,
+    None_,
+    Ok,
+    Op,
+    Operator,
+    Option,
+    Result,
+    RopeError,
+    Some,
+    do,
+    run,
+)
+
+if TYPE_CHECKING:
+    # ==========================================================================
+    # Result: Constructors
+    # ==========================================================================
+
+    # Ok() returns Result[T, Never] - error type is Never (can unify with any E)
+    ok_int: Result[int, Never] = Ok(42)
+    assert_type(Ok(42), Result[int, Never])
+    assert_type(Ok("hello"), Result[str, Never])
+
+    # Err() returns Result[Never, E] - ok type is Never (can unify with any T)
+    err_str: Result[Never, str] = Err("error")
+    assert_type(Err("error"), Result[Never, str])
+    assert_type(Err(ValueError("oops")), Result[Never, ValueError])
+
+    # ==========================================================================
+    # Result: Methods
+    # ==========================================================================
+
+    def get_result() -> Result[int, str]:
+        return Ok(10)
+
+    res = get_result()
+
+    # is_ok / is_err return bool
+    assert_type(res.is_ok(), bool)
+    assert_type(res.is_err(), bool)
+
+    # unwrap returns the Ok value type
+    assert_type(res.unwrap(), int)
+
+    # unwrap_err returns the Err value type
+    assert_type(res.unwrap_err(), str)
+
+    # map transforms the Ok value, preserves error type
+    mapped = res.map(lambda x: str(x))
+    assert_type(mapped, Result[str, str])
+
+    # map with different output type
+    mapped_float = res.map(lambda x: x * 2.5)
+    assert_type(mapped_float, Result[float, str])
+
+    # map_err transforms the Err value, preserves ok type
+    mapped_err = res.map_err(lambda e: ValueError(e))
+    assert_type(mapped_err, Result[int, ValueError])
+
+    # and_then chains Result-returning functions
+    def validate(x: int) -> Result[str, str]:
+        return Ok(str(x)) if x > 0 else Err("negative")
+
+    chained = res.and_then(validate)
+    assert_type(chained, Result[str, str])
+
+    # ==========================================================================
+    # Result: Chaining (README example)
+    # ==========================================================================
+
+    # Functional chaining with explicit error type annotation
+    def fetch_value() -> Result[str, str]:
+        return Ok("123")
+
+    chain_result = (
+        fetch_value().map(int).map(lambda x: x * 2).and_then(lambda x: Ok(f"Value is {x}"))
+    )
+    assert_type(chain_result, Result[str, str])
+
+    # ==========================================================================
+    # Option: Constructors
+    # ==========================================================================
+
+    # Some() returns Option[T]
+    some_int: Option[int] = Some(42)
+    assert_type(Some(42), Option[int])
+    assert_type(Some("hello"), Option[str])
+
+    # None_() returns Option[Never]
+    none_val: Option[Never] = None_()
+    assert_type(None_(), Option[Never])
+
+    # ==========================================================================
+    # Option: Methods
+    # ==========================================================================
+
+    def get_option() -> Option[int]:
+        return Some(10)
+
+    opt = get_option()
+
+    # is_some / is_none return bool
+    assert_type(opt.is_some(), bool)
+    assert_type(opt.is_none(), bool)
+
+    # unwrap returns the value type
+    assert_type(opt.unwrap(), int)
+
+    # map transforms the value
+    mapped_opt = opt.map(lambda x: str(x))
+    assert_type(mapped_opt, Option[str])
+
+    # unwrap_or returns union of value type and default type
+    with_default = opt.unwrap_or("default")
+    assert_type(with_default, int | str)
+
+    # unwrap_or with same type
+    same_type_default = opt.unwrap_or(0)
+    assert_type(same_type_default, int)
+
+    # ==========================================================================
+    # Option: README example
+    # ==========================================================================
+
+    def find_user(user_id: int) -> Option[str]:
+        return Some("Alice") if user_id == 1 else None_()
+
+    name_opt = find_user(1)
+    assert_type(name_opt, Option[str])
+
+    name = name_opt.unwrap_or("Guest")
+    assert_type(name, str)
+
+    # ==========================================================================
+    # Operator: Flat API (backward compatible)
+    # ==========================================================================
+
+    # Text operators
+    assert_type(Op.split("@"), Operator[str, list[str]])
+    assert_type(Op.to_uppercase(), Operator[str, str])
+    assert_type(Op.len(), Operator[str, int])
+
+    # Sequence operators
+    assert_type(Op.index(0), Operator[Sequence[object], object])
+
+    # Mapping operators
+    assert_type(Op.get("key"), Operator[Mapping[str, object], object])
+
+    # Coercion operators
+    assert_type(Op.assert_str(), Operator[object, str])
+    assert_type(Op.expect_str(), Operator[object, str])
+
+    # ==========================================================================
+    # Operator: Namespace API
+    # ==========================================================================
+
+    # Op.text namespace
+    assert_type(Op.text.split("@"), Operator[str, list[str]])
+    assert_type(Op.text.to_uppercase(), Operator[str, str])
+
+    # Op.seq namespace
+    assert_type(Op.seq.index(0), Operator[Sequence[object], object])
+
+    # Op.map namespace
+    assert_type(Op.map.get("key"), Operator[Mapping[str, object], object])
+
+    # Op.coerce namespace
+    assert_type(Op.coerce.assert_str(), Operator[object, str])
+    assert_type(Op.coerce.expect_str(), Operator[object, str])
+
+    # ==========================================================================
+    # Blueprint: Construction and Chaining
+    # ==========================================================================
+
+    # Blueprint() returns Blueprint[object, object]
+    assert_type(Blueprint(), Blueprint[object, object])
+
+    # Blueprint.any() returns Blueprint[object, object]
+    assert_type(Blueprint.any(), Blueprint[object, object])
+
+    # Blueprint.for_type() narrows input type
+    assert_type(Blueprint.for_type(str), Blueprint[str, str])
+    assert_type(Blueprint.for_type(int), Blueprint[int, int])
+
+    # pipe() transforms output type
+    bp_split = Blueprint.for_type(str).pipe(Op.split("@"))
+    assert_type(bp_split, Blueprint[str, list[str]])
+
+    # Chained pipes
+    bp_chain = Blueprint.for_type(str).pipe(Op.split("@")).pipe(Op.index(0))
+    assert_type(bp_chain, Blueprint[str, object])
+
+    # guard_str() narrows object -> str
+    bp_guarded = Blueprint.any().guard_str()
+    assert_type(bp_guarded, Blueprint[object, str])
+
+    # Full chain with guard_str
+    bp_full = (
+        Blueprint.for_type(str)
+        .pipe(Op.split("@"))
+        .pipe(Op.index(1))
+        .guard_str()
+        .pipe(Op.to_uppercase())
+    )
+    assert_type(bp_full, Blueprint[str, str])
+
+    # ==========================================================================
+    # Blueprint: Namespace API equivalence
+    # ==========================================================================
+
+    # Namespace API should produce same types as flat API
+    bp_ns = Blueprint.for_type(str).pipe(Op.text.split("@")).pipe(Op.seq.index(0))
+    assert_type(bp_ns, Blueprint[str, object])
+
+    bp_coerce = Blueprint().pipe(Op.coerce.expect_str()).pipe(Op.text.to_uppercase())
+    assert_type(bp_coerce, Blueprint[object, str])
+
+    # ==========================================================================
+    # run() function
+    # ==========================================================================
+
+    bp_for_run = Blueprint.for_type(str).pipe(Op.split("@"))
+    result_from_run = run(bp_for_run, "a@b")
+    assert_type(result_from_run, Result[list[str], RopeError])
+
+    # ==========================================================================
+    # RopeError properties
+    # ==========================================================================
+
+    def get_rope_error() -> RopeError:
+        raise NotImplementedError
+
+    rope_err = get_rope_error()
+
+    assert_type(rope_err.kind, ErrorKind)
+    assert_type(rope_err.code, str)
+    assert_type(rope_err.message, str)
+    assert_type(rope_err.metadata, dict[str, str])
+    assert_type(rope_err.op, str | None)
+    assert_type(rope_err.path, list[str | int])
+    assert_type(rope_err.expected, str | None)
+    assert_type(rope_err.got, str | None)
+    assert_type(rope_err.cause, str | None)
+
+    # ==========================================================================
+    # ErrorKind class attributes
+    # ==========================================================================
+
+    assert_type(ErrorKind.InvalidInput, ErrorKind)
+    assert_type(ErrorKind.NotFound, ErrorKind)
+    assert_type(ErrorKind.Internal, ErrorKind)
+
+    # ==========================================================================
+    # @do decorator
+    # ==========================================================================
+
+    @do
+    def to_upper(
+        value: str,
+    ) -> Generator[Result[str, object], str, Result[str, object]]:
+        text = yield Ok(value)
+        return Ok(text.upper())
+
+    # @do decorated function returns Result
+    do_result: Result[str, object] = to_upper("hello")
+    assert_type(to_upper("hello"), Result[str, object])

@@ -30,7 +30,6 @@ module-name = "pyrope.pyrope_native"
 
 [tool.ruff]
 line-length = 100
-exclude = ["tools/"]
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -79,6 +78,7 @@ ignore = [
   "B904",    # Allow raising exceptions without from in controlled contexts
   "INP001",  # Allow implicit namespace packages for tests
   "RUF003",  # Allow fullwidth characters in comments (Japanese comments)
+  "PLR0912", # Too many branches (parse_meta in gen_ops.py naturally has many branches)
   "PLR0913", # Too many arguments (already handled with clippy)
   "PLR2004", # Magic value used in comparison
 ]
@@ -88,13 +88,12 @@ python_version = "3.14"
 strict = true
 show_error_codes = true
 mypy_path = ["pyrope"]
-exclude = ["tools/"]
 
 [tool.pyright]
 pythonVersion = "3.14"
 venvPath = "."
 typeCheckingMode = "strict"
-exclude = ["tools/", ".venv/"]
+exclude = [".venv/"]
 reportMissingTypeStubs = false
 reportPrivateUsage = false
 reportUnnecessaryIsInstance = false

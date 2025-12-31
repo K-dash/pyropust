@@ -1,4 +1,5 @@
-#[derive(Clone, Debug)]
+use pyo3::prelude::*;
+
 pub enum OperatorKind {
     /// @op name=assert_str py=assert_str
     /// @sig in=object out=str
@@ -36,6 +37,12 @@ pub enum OperatorKind {
     /// @ns coerce
     JsonDecode,
 
+    /// @op name=map_py py=map_py
+    /// @sig in=object out=object
+    /// @ns core
+    /// @param func:callable
+    MapPy { func: Py<PyAny> },
+
     /// @op name=split py=split
     /// @sig in=str out=list[str]
     /// @ns text
@@ -66,6 +73,32 @@ pub enum OperatorKind {
     Len,
 }
 
+impl Clone for OperatorKind {
+    fn clone(&self) -> Self {
+        match self {
+            OperatorKind::AssertStr => OperatorKind::AssertStr,
+            OperatorKind::ExpectStr => OperatorKind::ExpectStr,
+            OperatorKind::AsInt => OperatorKind::AsInt,
+            OperatorKind::AsFloat => OperatorKind::AsFloat,
+            OperatorKind::AsBool => OperatorKind::AsBool,
+            OperatorKind::AsDatetime { format } => OperatorKind::AsDatetime {
+                format: format.clone(),
+            },
+            OperatorKind::JsonDecode => OperatorKind::JsonDecode,
+            OperatorKind::MapPy { func } => Python::attach(|py| OperatorKind::MapPy {
+                func: func.clone_ref(py),
+            }),
+            OperatorKind::Split { delim } => OperatorKind::Split {
+                delim: delim.clone(),
+            },
+            OperatorKind::Index { idx } => OperatorKind::Index { idx: *idx },
+            OperatorKind::GetKey { key } => OperatorKind::GetKey { key: key.clone() },
+            OperatorKind::ToUppercase => OperatorKind::ToUppercase,
+            OperatorKind::Len => OperatorKind::Len,
+        }
+    }
+}
+
 impl OperatorKind {
     pub fn name(&self) -> &'static str {
         match self {
@@ -76,6 +109,7 @@ impl OperatorKind {
             OperatorKind::AsBool => "AsBool",
             OperatorKind::AsDatetime { .. } => "AsDatetime",
             OperatorKind::JsonDecode => "JsonDecode",
+            OperatorKind::MapPy { .. } => "MapPy",
             OperatorKind::Split { .. } => "Split",
             OperatorKind::Index { .. } => "Index",
             OperatorKind::GetKey { .. } => "GetKey",

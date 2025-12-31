@@ -340,3 +340,37 @@ def test_turbo_json_path() -> None:
     fail_res = run(bp, '{"name": "alice", ')
     assert fail_res.is_err()
     assert fail_res.unwrap_err().code == "json_parse_error"
+
+
+def test_map_py_operator() -> None:
+    def reverse_text(value: str) -> str:
+        return "".join(reversed(value))
+
+    bp = Blueprint.for_type(str).pipe(Op.map_py(reverse_text)).pipe(Op.to_uppercase())
+
+    res = run(bp, "hello")
+    assert res.is_ok()
+    assert res.unwrap() == "OLLEH"
+
+    def fail_fn(_: str) -> str:
+        raise ValueError("boom")
+
+    bp_fail = Blueprint.for_type(str).pipe(Op.map_py(fail_fn))
+    fail_res = run(bp_fail, "hello")
+    assert fail_res.is_err()
+    err = fail_res.unwrap_err()
+    assert err.code == "py_exception"
+    assert "py_traceback" in err.metadata
+    assert "ValueError" in err.metadata["py_traceback"]
+    assert "boom" in err.metadata["py_traceback"]
+
+
+def test_map_py_invalid_return() -> None:
+    def bad_return(_: str) -> object:
+        return object()
+
+    bp = Blueprint.for_type(str).pipe(Op.map_py(bad_return))
+    res = run(bp, "hello")
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "py_return_invalid"

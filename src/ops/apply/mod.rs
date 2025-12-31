@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::data::Value;
 
-use super::error::OpError;
+use super::error::{ErrorKind, OpError};
 use super::kind::OperatorKind;
 
 mod coerce;
@@ -21,6 +21,15 @@ pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
         OperatorKind::AsBool => coerce::as_bool(op_name, value),
         OperatorKind::AsDatetime { format } => coerce::as_datetime(op_name, value, format),
         OperatorKind::JsonDecode => coerce::json_decode(op_name, value),
+        OperatorKind::MapPy { .. } => Err(OpError {
+            kind: ErrorKind::Internal,
+            code: "map_py_runtime",
+            message: "map_py is only supported inside run()",
+            op: op_name,
+            path: Vec::new(),
+            expected: None,
+            got: None,
+        }),
         OperatorKind::Split { delim } => text::split(op_name, value, delim),
         OperatorKind::ToUppercase => text::to_uppercase(op_name, value),
         OperatorKind::Index { idx } => seq::index(op_name, value, *idx),

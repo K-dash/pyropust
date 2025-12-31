@@ -1,7 +1,7 @@
 use super::error::{ErrorKind, RopeError};
 use super::operator::Operator;
 use super::result::{err, ok, ResultObj};
-use crate::data::{py_to_value, serde_to_value, value_to_py};
+use crate::data::{py_to_value, serde_to_value, value_to_py, Value};
 use crate::ops::PathItem;
 use crate::ops::{apply, OpError, OperatorKind};
 use pyo3::prelude::*;
@@ -120,21 +120,81 @@ pub fn run(py: Python<'_>, blueprint: PyRef<'_, Blueprint>, input: Py<PyAny>) ->
 
     if matches!(blueprint.ops.first(), Some(OperatorKind::JsonDecode)) {
         for op in blueprint.ops.iter().skip(1) {
-            match apply(op, current) {
-                Ok(value) => current = value,
-                Err(e) => return op_error_to_result(py, e),
+            match op {
+                OperatorKind::MapPy { func } => match apply_map_py(py, func, current) {
+                    Ok(value) => current = value,
+                    Err(err) => return err,
+                },
+                _ => match apply(op, current) {
+                    Ok(value) => current = value,
+                    Err(e) => return op_error_to_result(py, e),
+                },
             }
         }
     } else {
         for op in &blueprint.ops {
-            match apply(op, current) {
-                Ok(value) => current = value,
-                Err(e) => return op_error_to_result(py, e),
+            match op {
+                OperatorKind::MapPy { func } => match apply_map_py(py, func, current) {
+                    Ok(value) => current = value,
+                    Err(err) => return err,
+                },
+                _ => match apply(op, current) {
+                    Ok(value) => current = value,
+                    Err(e) => return op_error_to_result(py, e),
+                },
             }
         }
     }
 
     ok(value_to_py(py, current))
+}
+
+fn apply_map_py(py: Python<'_>, func: &Py<PyAny>, value: Value) -> Result<Value, ResultObj> {
+    let arg = value_to_py(py, value);
+    let result = func.call1(py, (arg,)).map_err(|err| {
+        let mut metadata = HashMap::new();
+        if let Ok(traceback_mod) = py.import("traceback") {
+            let tb = err.traceback(py);
+            if let Ok(formatted) = traceback_mod
+                .call_method1("format_exception", (err.get_type(py), err.value(py), tb))
+                .and_then(|obj| obj.extract::<Vec<String>>())
+            {
+                metadata.insert("py_traceback".to_string(), formatted.concat());
+            }
+        }
+        rope_error(
+            py,
+            ErrorKind::Internal,
+            "py_exception",
+            "Python callback raised an exception",
+            if metadata.is_empty() {
+                None
+            } else {
+                Some(metadata)
+            },
+            Some("MapPy".to_string()),
+            Vec::new(),
+            None,
+            None,
+            Some(err.to_string()),
+        )
+    })?;
+
+    match py_to_value(result.bind(py)) {
+        Ok(value) => Ok(value),
+        Err(err) => Err(rope_error(
+            py,
+            ErrorKind::Internal,
+            "py_return_invalid",
+            "Python callback returned unsupported value",
+            None,
+            Some("MapPy".to_string()),
+            Vec::new(),
+            Some(err.expected.to_string()),
+            Some(err.got),
+            Some(err.message.to_string()),
+        )),
+    }
 }
 
 fn op_error_to_result(py: Python<'_>, e: OpError) -> ResultObj {

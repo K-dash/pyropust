@@ -191,6 +191,11 @@ if TYPE_CHECKING:
     assert_type(Op.expect_str(), Operator[object, str])
     assert_type(Op.json_decode(), Operator[str | bytes, Mapping[str, object]])
 
+    def to_len(value: str) -> int:
+        return len(value)
+
+    assert_type(Op.map_py(to_len), Operator[str, int])
+
     # ==========================================================================
     # Operator: Namespace API
     # ==========================================================================
@@ -209,6 +214,9 @@ if TYPE_CHECKING:
     assert_type(Op.coerce.assert_str(), Operator[object, str])
     assert_type(Op.coerce.expect_str(), Operator[object, str])
     assert_type(Op.coerce.json_decode(), Operator[str | bytes, Mapping[str, object]])
+
+    # Op.core namespace
+    assert_type(Op.core.map_py(to_len), Operator[str, int])
 
     # ==========================================================================
     # Blueprint: Construction and Chaining

@@ -68,6 +68,13 @@ pub struct OpCore;
 #[pymethods]
 impl OpCore {
     #[staticmethod]
+    pub fn map_py(func: Py<PyAny>) -> Operator {
+        Operator {
+            kind: OperatorKind::MapPy { func },
+        }
+    }
+
+    #[staticmethod]
     pub fn len() -> Operator {
         Operator {
             kind: OperatorKind::Len,
@@ -202,6 +209,12 @@ impl Op {
     #[staticmethod]
     pub fn json_decode() -> Operator {
         OpCoerce::json_decode()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn map_py(func: Py<PyAny>) -> Operator {
+        OpCore::map_py(func)
     }
 
     /// Alias for backward compatibility

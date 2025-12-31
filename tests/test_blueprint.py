@@ -383,6 +383,17 @@ def test_text_ops() -> None:
     assert res.unwrap() == "hello-world"
 
 
+def test_split_invalid_delim() -> None:
+    bp = Blueprint.for_type(str).pipe(Op.split(""))
+    res = run(bp, "a,b")
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "invalid_delim"
+    assert err.op == "Split"
+    assert err.expected == "non-empty string"
+    assert err.got == "empty string"
+
+
 def test_as_str_conversion() -> None:
     bp = Blueprint.for_type(object).pipe(Op.as_str())
     res = run(bp, 123)
@@ -426,6 +437,88 @@ def test_map_keys_values() -> None:
     values = res_values.unwrap()
     assert 1 in values
     assert 2 in values
+
+
+def test_get_missing_key() -> None:
+    bp = Blueprint.for_type(dict[str, int]).pipe(Op.get("missing"))
+    res = run(bp, {"present": 1})
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "key_not_found"
+    assert err.op == "GetKey"
+    assert str(err.kind) == str(ErrorKind.NotFound)
+    assert err.path == ["missing"]
+
+
+def test_invalid_operator_in_pipeline() -> None:
+    # NOTE: type-ignore is intentional: we want to exercise runtime error handling
+    # for a pipeline that should be rejected by static type checking.
+    bp = Blueprint.for_type(str).pipe(Op.get("name"))  # type: ignore[arg-type]
+    res = run(bp, "not a map")
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "type_mismatch"
+    assert err.op == "GetKey"
+    assert err.expected == "map"
+    assert err.got == "str"
+
+
+def test_get_or_default_invalid() -> None:
+    bp = Blueprint.for_type(dict[str, int]).pipe(
+        # NOTE: type-ignore is intentional: default value is not convertible and
+        # this test validates the runtime error path.
+        Op.get_or("missing", object())  # type: ignore[arg-type]
+    )
+    res = run(bp, {"present": 1})
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "default_invalid"
+    assert err.op == "GetOr"
+
+
+def test_len_type_mismatch() -> None:
+    bp = Blueprint.for_type(object).pipe(Op.len())
+    res = run(bp, 123)
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "type_mismatch"
+    assert err.op == "Len"
+    assert err.expected == "str|bytes|list|map"
+    assert err.got == "int"
+
+
+def test_json_decode_invalid_input_type() -> None:
+    # NOTE: type-ignore is intentional: json_decode expects str|bytes.
+    bp = Blueprint.for_type(object).pipe(Op.json_decode())  # type: ignore[arg-type]
+    res = run(bp, 123)
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "type_mismatch"
+    assert err.op == "JsonDecode"
+    assert err.expected == "str|bytes"
+    assert err.got == "int"
+
+
+def test_input_map_key_not_str() -> None:
+    bp = Blueprint.for_type(dict[str, object]).pipe(Op.get("key"))
+    res = run(bp, {1: "x"})
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "invalid_key"
+    assert err.op == "Input"
+    assert err.expected == "str"
+    assert err.got == "non-str"
+
+
+def test_input_unsupported_type() -> None:
+    bp = Blueprint.for_type(object).pipe(Op.is_null())
+    res = run(bp, {1, 2})  # set is unsupported
+    assert res.is_err()
+    err = res.unwrap_err()
+    assert err.code == "unsupported_type"
+    assert err.op == "Input"
+    assert err.expected == "null/str/int/float/bool/bytes/datetime/list/map"
+    assert err.got == "set"
 
 
 def test_is_null_is_empty() -> None:

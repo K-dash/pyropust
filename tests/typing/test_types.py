@@ -280,6 +280,11 @@ if TYPE_CHECKING:
     )
     assert_type(bp_full, Blueprint[str, str])
 
+    # Invalid operator insertion should be rejected by type checkers.
+    # These are documented with type ignores to keep strict checking green.
+    _bp_invalid_str = Blueprint.for_type(int).pipe(Op.to_uppercase())  # type: ignore[arg-type]
+    _bp_invalid_map = Blueprint.for_type(str).pipe(Op.get("key"))  # type: ignore[arg-type]
+
     # ==========================================================================
     # Blueprint: Namespace API equivalence
     # ==========================================================================

@@ -1,4 +1,4 @@
-use crate::data::Value;
+use crate::interop::Value;
 
 use super::super::error::OpError;
 
@@ -37,7 +37,7 @@ pub(super) fn is_empty(op: &'static str, value: Value) -> Result<Value, OpError>
 #[cfg(test)]
 mod tests {
     use super::is_empty;
-    use crate::data::Value;
+    use crate::interop::Value;
     use crate::ops::ErrorKind;
 
     #[test]

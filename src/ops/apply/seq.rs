@@ -1,4 +1,4 @@
-use crate::data::Value;
+use crate::interop::Value;
 
 use super::super::error::{ErrorKind, OpError, PathItem};
 use super::expect_list_value;
@@ -66,7 +66,7 @@ pub(super) fn last(op: &'static str, value: Value) -> Result<Value, OpError> {
 #[cfg(test)]
 mod tests {
     use super::{first, last, slice};
-    use crate::data::Value;
+    use crate::interop::Value;
     use crate::ops::ErrorKind;
 
     #[test]

@@ -1,4 +1,4 @@
-use crate::data::Value;
+use crate::interop::Value;
 
 use super::super::error::{ErrorKind, OpError, PathItem};
 use super::expect_map_value;

@@ -24,6 +24,34 @@ impl OpCoerce {
             kind: OperatorKind::ExpectStr,
         }
     }
+
+    #[staticmethod]
+    pub fn as_int() -> Operator {
+        Operator {
+            kind: OperatorKind::AsInt,
+        }
+    }
+
+    #[staticmethod]
+    pub fn as_float() -> Operator {
+        Operator {
+            kind: OperatorKind::AsFloat,
+        }
+    }
+
+    #[staticmethod]
+    pub fn as_bool() -> Operator {
+        Operator {
+            kind: OperatorKind::AsBool,
+        }
+    }
+
+    #[staticmethod]
+    pub fn as_datetime(format: String) -> Operator {
+        Operator {
+            kind: OperatorKind::AsDatetime { format },
+        }
+    }
 }
 
 /// Namespace for core operations
@@ -137,6 +165,30 @@ impl Op {
     #[staticmethod]
     pub fn expect_str() -> Operator {
         OpCoerce::expect_str()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn as_int() -> Operator {
+        OpCoerce::as_int()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn as_float() -> Operator {
+        OpCoerce::as_float()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn as_bool() -> Operator {
+        OpCoerce::as_bool()
+    }
+
+    /// Alias for backward compatibility
+    #[staticmethod]
+    pub fn as_datetime(format: String) -> Operator {
+        OpCoerce::as_datetime(format)
     }
 
     /// Alias for backward compatibility

@@ -1,0 +1,62 @@
+use std::collections::HashMap;
+
+use crate::data::Value;
+
+use super::error::OpError;
+use super::kind::OperatorKind;
+
+mod coerce;
+mod core;
+mod map;
+mod seq;
+mod text;
+
+pub fn apply(op: &OperatorKind, value: Value) -> Result<Value, OpError> {
+    let op_name = op.name();
+    match op {
+        OperatorKind::AssertStr => coerce::assert_str(op_name, value),
+        OperatorKind::ExpectStr => coerce::expect_str(op_name, value),
+        OperatorKind::AsInt => coerce::as_int(op_name, value),
+        OperatorKind::AsFloat => coerce::as_float(op_name, value),
+        OperatorKind::AsBool => coerce::as_bool(op_name, value),
+        OperatorKind::AsDatetime { format } => coerce::as_datetime(op_name, value, format),
+        OperatorKind::Split { delim } => text::split(op_name, value, delim),
+        OperatorKind::ToUppercase => text::to_uppercase(op_name, value),
+        OperatorKind::Index { idx } => seq::index(op_name, value, *idx),
+        OperatorKind::GetKey { key } => map::get_key(op_name, value, key),
+        OperatorKind::Len => core::len(op_name, value),
+    }
+}
+
+fn expect_str_value(op: &'static str, value: Value) -> Result<String, OpError> {
+    match value {
+        Value::Str(text) => Ok(text),
+        other => Err(OpError::type_mismatch(
+            op,
+            "str",
+            other.type_name().to_string(),
+        )),
+    }
+}
+
+fn expect_list_value(op: &'static str, value: Value) -> Result<Vec<Value>, OpError> {
+    match value {
+        Value::List(items) => Ok(items),
+        other => Err(OpError::type_mismatch(
+            op,
+            "list",
+            other.type_name().to_string(),
+        )),
+    }
+}
+
+fn expect_map_value(op: &'static str, value: Value) -> Result<HashMap<String, Value>, OpError> {
+    match value {
+        Value::Map(map) => Ok(map),
+        other => Err(OpError::type_mismatch(
+            op,
+            "map",
+            other.type_name().to_string(),
+        )),
+    }
+}

@@ -1,8 +1,17 @@
+use chrono::{DateTime, Utc};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyBytes, PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyBool, PyBytes, PyDict, PyFloat, PyInt, PyList, PyString};
 use std::collections::HashMap;
 
 use super::Value;
+
+/// Check if a Python object is a datetime instance
+fn is_datetime(obj: &Bound<'_, PyAny>) -> bool {
+    obj.get_type()
+        .name()
+        .map(|name| name == "datetime")
+        .unwrap_or(false)
+}
 
 #[derive(Debug)]
 pub struct ConvertError {
@@ -19,8 +28,24 @@ pub fn py_to_value(obj: &Bound<'_, PyAny>) -> Result<Value, ConvertError> {
     if let Ok(value) = obj.extract::<bool>() {
         return Ok(Value::Bool(value));
     }
+    // Check for exact int type first (before float, since int can be extracted as float)
+    if obj.is_instance_of::<PyInt>() {
+        if let Ok(value) = obj.extract::<i64>() {
+            return Ok(Value::Int(value));
+        }
+    }
+    // Check for exact float type
+    if obj.is_instance_of::<PyFloat>() {
+        if let Ok(value) = obj.extract::<f64>() {
+            return Ok(Value::Float(value));
+        }
+    }
+    // Fallback for numeric types
     if let Ok(value) = obj.extract::<i64>() {
         return Ok(Value::Int(value));
+    }
+    if let Ok(value) = obj.extract::<f64>() {
+        return Ok(Value::Float(value));
     }
     if let Ok(value) = obj.extract::<String>() {
         return Ok(Value::Str(value));
@@ -54,6 +79,12 @@ pub fn py_to_value(obj: &Bound<'_, PyAny>) -> Result<Value, ConvertError> {
         }
         return Ok(Value::Map(map));
     }
+    // Check for datetime (must be before generic extraction attempts)
+    if is_datetime(obj) {
+        if let Ok(dt) = obj.extract::<DateTime<Utc>>() {
+            return Ok(Value::DateTime(dt));
+        }
+    }
     let type_name = obj
         .get_type()
         .name()
@@ -62,7 +93,7 @@ pub fn py_to_value(obj: &Bound<'_, PyAny>) -> Result<Value, ConvertError> {
     Err(ConvertError {
         code: "unsupported_type",
         message: "Unsupported input type",
-        expected: "null/str/int/bool/bytes/list/map",
+        expected: "null/str/int/float/bool/bytes/datetime/list/map",
         got: type_name,
     })
 }
@@ -72,8 +103,10 @@ pub fn value_to_py(py: Python<'_>, value: Value) -> Py<PyAny> {
         Value::Null => py.None(),
         Value::Str(value) => PyString::new(py, &value).unbind().into(),
         Value::Int(value) => PyInt::new(py, value).unbind().into(),
+        Value::Float(value) => PyFloat::new(py, value).unbind().into(),
         Value::Bool(value) => PyBool::new(py, value).to_owned().unbind().into(),
         Value::Bytes(value) => PyBytes::new(py, &value).unbind().into(),
+        Value::DateTime(dt) => dt.into_pyobject(py).expect("datetime").unbind().into(),
         Value::List(values) => {
             let list = PyList::empty(py);
             for item in values {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from datetime import UTC, datetime
 
 from pyrope import Blueprint, ErrorKind, Ok, Op, Result, RopeError, do, run
 
@@ -155,3 +156,169 @@ def test_len_backward_compat_aliases() -> None:
     result_text = run(bp_text, "test")
 
     assert result_flat.unwrap() == result_text.unwrap() == 4
+
+
+def test_as_int_conversion() -> None:
+    """Test as_int() converts str/float/bool to int."""
+    bp = Blueprint().pipe(Op.coerce.as_int())
+
+    # String to int
+    result = run(bp, "42")
+    assert result.is_ok()
+    assert result.unwrap() == 42
+
+    # String with whitespace
+    result = run(bp, "  -123  ")
+    assert result.is_ok()
+    assert result.unwrap() == -123
+
+    # Float to int (truncation)
+    result = run(bp, 3.7)
+    assert result.is_ok()
+    assert result.unwrap() == 3
+
+    # Bool to int
+    true_val: object = True
+    result = run(bp, true_val)
+    assert result.is_ok()
+    assert result.unwrap() == 1
+
+    false_val: object = False
+    result = run(bp, false_val)
+    assert result.is_ok()
+    assert result.unwrap() == 0
+
+    # Int passthrough
+    result = run(bp, 99)
+    assert result.is_ok()
+    assert result.unwrap() == 99
+
+    # Invalid string
+    fail_result = run(bp, "not a number")
+    assert fail_result.is_err()
+    assert fail_result.unwrap_err().code == "parse_error"
+
+
+def test_as_float_conversion() -> None:
+    """Test as_float() converts str/int to float."""
+    bp = Blueprint().pipe(Op.coerce.as_float())
+
+    # String to float
+    result = run(bp, "3.14")
+    assert result.is_ok()
+    assert abs(result.unwrap() - 3.14) < 0.001
+
+    # Int to float
+    result = run(bp, 42)
+    assert result.is_ok()
+    assert result.unwrap() == 42.0
+
+    # Float passthrough
+    result = run(bp, 2.718)
+    assert result.is_ok()
+    assert abs(result.unwrap() - 2.718) < 0.001
+
+    # Invalid string
+    fail_result = run(bp, "not a float")
+    assert fail_result.is_err()
+    assert fail_result.unwrap_err().code == "parse_error"
+
+
+def test_as_bool_conversion() -> None:
+    """Test as_bool() converts str/int to bool."""
+    bp = Blueprint().pipe(Op.coerce.as_bool())
+
+    # String truthy values
+    for truthy in ["true", "True", "TRUE", "1", "yes", "YES", "on", "ON"]:
+        result = run(bp, truthy)
+        assert result.is_ok(), f"Failed for {truthy}"
+        assert result.unwrap() is True, f"Expected True for {truthy}"
+
+    # String falsy values
+    for falsy in ["false", "False", "FALSE", "0", "no", "NO", "off", "OFF", ""]:
+        result = run(bp, falsy)
+        assert result.is_ok(), f"Failed for {falsy!r}"
+        assert result.unwrap() is False, f"Expected False for {falsy!r}"
+
+    # Int to bool
+    result = run(bp, 1)
+    assert result.is_ok()
+    assert result.unwrap() is True
+
+    result = run(bp, 0)
+    assert result.is_ok()
+    assert result.unwrap() is False
+
+    result = run(bp, -5)
+    assert result.is_ok()
+    assert result.unwrap() is True  # Non-zero is truthy
+
+    # Bool passthrough
+    true_val: object = True
+    result = run(bp, true_val)
+    assert result.is_ok()
+    assert result.unwrap() is True
+
+    # Invalid string
+    fail_result = run(bp, "maybe")
+    assert fail_result.is_err()
+    assert fail_result.unwrap_err().code == "parse_error"
+
+
+def test_float_input_output() -> None:
+    """Test that float values can be passed through Blueprint."""
+    # Float passthrough via as_float
+    bp_float = Blueprint().pipe(Op.coerce.as_float())
+    result = run(bp_float, 3.14159)
+    assert result.is_ok()
+    assert abs(result.unwrap() - 3.14159) < 0.00001
+
+
+def test_as_datetime_conversion() -> None:
+    """Test as_datetime() parses string to datetime."""
+    bp = Blueprint().pipe(Op.coerce.as_datetime("%Y-%m-%d %H:%M:%S"))
+
+    # Valid datetime string
+    result = run(bp, "2024-12-25 10:30:00")
+    assert result.is_ok()
+    dt = result.unwrap()
+    assert isinstance(dt, datetime)
+    assert dt.year == 2024
+    assert dt.month == 12
+    assert dt.day == 25
+    assert dt.hour == 10
+    assert dt.minute == 30
+    assert dt.second == 0
+    assert dt.tzinfo == UTC  # Converted to UTC
+
+    # Different format
+    bp_date_only = Blueprint().pipe(Op.coerce.as_datetime("%Y-%m-%d"))
+    result = run(bp_date_only, "2023-06-15")
+    assert result.is_ok()
+    dt = result.unwrap()
+    assert dt.year == 2023
+    assert dt.month == 6
+    assert dt.day == 15
+
+    # Invalid format
+    fail_result = run(bp, "not a date")
+    assert fail_result.is_err()
+    err = fail_result.unwrap_err()
+    assert err.code == "parse_error"
+    assert "datetime" in err.message.lower()
+
+    # Wrong format
+    fail_result = run(bp, "25/12/2024")  # Format doesn't match
+    assert fail_result.is_err()
+
+
+def test_datetime_input_passthrough() -> None:
+    """Test that datetime values can be passed through Blueprint."""
+    # Create a UTC datetime and pass it through as_datetime
+    bp = Blueprint().pipe(Op.coerce.as_datetime("%Y-%m-%d"))
+    input_dt = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+    result = run(bp, input_dt)
+    assert result.is_ok()
+    dt = result.unwrap()
+    assert dt == input_dt

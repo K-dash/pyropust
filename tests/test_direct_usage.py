@@ -46,7 +46,7 @@ class TestResultAndThen:
         def get_ok() -> Result[int, str]:
             return Ok(10)
 
-        def inner_err(val: int) -> Result[int, str]:
+        def inner_err(_val: int) -> Result[int, str]:
             return Err("inner error")
 
         res = get_ok().and_then(inner_err)
@@ -55,12 +55,7 @@ class TestResultAndThen:
 
     def test_readme_example_functional_chaining(self) -> None:
         """Verify the README functional chaining example works."""
-        res = (
-            Ok("123")
-            .map(int)
-            .map(lambda x: x * 2)
-            .and_then(lambda x: Ok(f"Value is {x}"))
-        )
+        res = Ok("123").map(int).map(lambda x: x * 2).and_then(lambda x: Ok(f"Value is {x}"))
         assert res.unwrap() == "Value is 246"
 
 

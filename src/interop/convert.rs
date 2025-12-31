@@ -153,7 +153,7 @@ pub fn serde_to_value(value: SerdeValue) -> Value {
 #[cfg(test)]
 mod tests {
     use super::serde_to_value;
-    use crate::data::Value;
+    use crate::interop::Value;
     use serde_json::json;
 
     #[test]

@@ -1,7 +1,7 @@
 use super::error::{ErrorKind, RopustError};
 use super::operator::Operator;
 use super::result::{err, ok, ResultObj};
-use crate::data::{py_to_value, serde_to_value, value_to_py, Value};
+use crate::interop::{py_to_value, serde_to_value, value_to_py, Value};
 use crate::ops::PathItem;
 use crate::ops::{apply, OpError, OperatorKind};
 use pyo3::prelude::*;

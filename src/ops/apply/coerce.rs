@@ -1,6 +1,6 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use crate::data::{serde_to_value, Value};
+use crate::interop::{serde_to_value, Value};
 
 use super::super::error::{ErrorKind, OpError};
 use super::expect_str_value;
@@ -187,7 +187,7 @@ pub(super) fn json_decode(op: &'static str, value: Value) -> Result<Value, OpErr
 #[cfg(test)]
 mod tests {
     use super::as_str;
-    use crate::data::Value;
+    use crate::interop::Value;
     use crate::ops::ErrorKind;
 
     #[test]

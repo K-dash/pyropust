@@ -1,4 +1,4 @@
-use crate::data::Value;
+use crate::interop::Value;
 
 use super::super::error::{ErrorKind, OpError};
 use super::expect_str_value;

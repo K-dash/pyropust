@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::data::Value;
+use crate::interop::Value;
 
 use super::error::{ErrorKind, OpError};
 use super::kind::OperatorKind;

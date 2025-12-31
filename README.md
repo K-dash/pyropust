@@ -80,7 +80,7 @@ print(f"Hello, {name}!")  # Hello, Alice!
 
 ## Blueprint (Batch Execution)
 
-For performance-critical pipelines, use `Blueprint` to define a sequence of operations and execute them in a single Rust call.
+For performance-critical pipelines, use `Blueprint` to define a sequence of operations and execute them in a single Rust call. This reduces Python↔Rust boundary crossings, which can help in longer pipelines.
 
 ```python
 from pyrope import Blueprint, Op, run
@@ -100,6 +100,38 @@ if result.is_ok():
     print(result.unwrap())  # "HELLO"
 else:
     print(f"Error: {result.unwrap_err().message}")
+```
+
+### Benchmark (reproducible, no extra deps)
+
+Run the included `timeit` benchmark to compare a pure-Python pipeline vs `Blueprint` in seconds. The benchmark builds the Blueprint in setup and measures `run()` only, reporting median timings:
+
+```bash
+uv run python bench/bench_blueprint_vs_python.py
+```
+
+Note: Small inputs or short pipelines may show little difference; multi-stage pipelines are where boundary reduction tends to help.
+
+`multi_run` compares repeatedly calling `run()` on a single-op Blueprint vs a single `run()` over a multi-op Blueprint (measures boundary-crossing overhead).
+
+Latest run (macOS arm64, Python 3.14.0, BENCH_TARGET_TIME=0.2, BENCH_REPEAT=5, BENCH_SIZES=medium,large, BENCH_PIPE_COUNTS=20, BENCH_CASES=pipeline,tiny_op,multi_run):
+
+```
+Blueprint vs Python (seconds, lower is better)
+repeat=5, target_time~0.2s per measurement
+Blueprint is built in setup; timing measures run() only.
+
+== medium ==
+-- pipe_count=20 --
+  pipeline | python: 0.371662s (n=20480) | blueprint: 0.362132s (n=2560) | ratio: 0.97x
+   tiny_op | python: 0.248113s (n=163840) | blueprint: 0.341658s (n=163840) | ratio: 1.38x
+ multi_run | python: 0.253638s (n=1280) | blueprint: 0.344409s (n=2560) | ratio: 1.36x
+
+== large ==
+-- pipe_count=20 --
+  pipeline | python: 0.215668s (n=640) | blueprint: 0.423312s (n=160) | ratio: 1.96x
+   tiny_op | python: 0.286244s (n=10240) | blueprint: 0.262916s (n=20480) | ratio: 0.92x
+ multi_run | python: 0.371366s (n=160) | blueprint: 0.182248s (n=80) | ratio: 0.49x
 ```
 
 ## Syntactic Sugar: `@do` Decorator

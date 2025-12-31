@@ -2,117 +2,70 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - "*.md"
+      - "docs/**"
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check-generated:
-    name: Check Generated Code
-    runs-on: ubuntu-latest
+  check:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.14"
-
-      - name: Run code generator
-        run: python3 tools/gen_ops.py
-
-      - name: Check for uncommitted changes
-        run: |
-          if ! git diff --exit-code src/py/op_generated.rs pyrope/__init__.pyi; then
-            echo "❌ Generated code is out of date!"
-            echo "Please run 'makers gen' locally and commit the changes."
-            exit 1
-          fi
-          echo "✅ Generated code is up-to-date"
-
-  rust:
-    name: Rust Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache Cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Run rustfmt
-        run: cargo fmt -- --check
-
-      - name: Run clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Run tests
-        run: cargo test
-
-  python:
-    name: Python Lint & Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@681c641aba71e4a1c380be3ab5e12ad51f415867 # v7.1.6
         with:
           enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Set up Python
-        run: uv python install 3.14
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: uv sync
+      - name: Cache cargo registry
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Build extension
-        run: uv run maturin develop
+      - name: Cache target
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: target
+          key: ${{ runner.os }}-ci-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-ci-
 
-      - name: Run Ruff format check
-        run: uv run ruff format --check .
+      - name: Install cargo-make
+        uses: taiki-e/install-action@45a93d9c71692daf99a53feb97366fb6f4c3757f # v2.65.5
+        with:
+          tool: cargo-make
 
-      - name: Run Ruff linter
-        run: uv run ruff check .
-
-      - name: Run MyPy
-        run: uv run mypy --strict .
-
-      - name: Run Pyright
-        run: uv run pyright .
-
-      - name: Run Pytest
-        run: uv run pytest -v
-
-  all:
-    name: All Checks Passed
-    needs: [check-generated, rust, python]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Success
-        run: echo "✅ All checks passed!"
+      - name: Run check task
+        run: cargo make check

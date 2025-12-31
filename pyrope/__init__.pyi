@@ -60,7 +60,7 @@ class Blueprint[OrigIn, Out]:
     def guard_str(self: Blueprint[OrigIn, object]) -> Blueprint[OrigIn, str]: ...
 
 class Op:
-        # BEGIN GENERATED OP
+    # BEGIN GENERATED OP
     @staticmethod
     def assert_str() -> Operator[object, str]: ...
     @staticmethod

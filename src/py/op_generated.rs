@@ -59,5 +59,4 @@ impl Op {
             kind: OperatorKind::Len,
         }
     }
-
 }

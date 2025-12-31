@@ -4,6 +4,15 @@ A proof-of-concept library that brings Rust's `Result` and `Option` types to Pyt
 
 The concept: "Drop a rope (type safety from Rust) into the dangerous freedom of Python."
 
+## Who This Is For
+
+Pyrope is for Python developers who want explicit, type-safe control over error flow and data transformations, especially when bridging Python and Rust or when pipelines become hard to reason about with exceptions alone.
+
+Common problems it helps with:
+- Making error propagation explicit and type-checked (Result/Option).
+- Defining typed, composable pipelines with predictable failure modes (Blueprint).
+- Keeping Python↔Rust boundaries safe without scattering try/except logic.
+
 ## Why Not Exceptions?
 
 1. **Explicit control flow**: Treat failures as values, not control flow jumps
@@ -78,9 +87,9 @@ name = name_opt.unwrap_or("Guest")
 print(f"Hello, {name}!")  # Hello, Alice!
 ```
 
-## Blueprint (Batch Execution)
+## Blueprint (Typed Pipelines)
 
-For performance-critical pipelines, use `Blueprint` to define a sequence of operations and execute them in a single Rust call. This reduces Python↔Rust boundary crossings, which can help in longer pipelines.
+Use `Blueprint` to define a typed, composable pipeline with explicit error handling. The primary value is clarity and type-safety across a sequence of operations. Performance can improve in some cases, but it is not guaranteed and should be treated as a secondary benefit.
 
 ```python
 from pyrope import Blueprint, Op, run
@@ -110,6 +119,15 @@ Supported operators are listed in [docs](docs/operations.md).
 
 Note: `Blueprint.for_type(...)` is a type-hinting helper for Python type checkers. It does not enforce runtime type checks.
 
+## Quick Start
+
+Start small and adopt features gradually:
+
+1. Wrap exceptions with `@catch` to get `Result`.
+2. Use `Result`/`Option` explicitly in Python code.
+3. Use `@do` for short-circuiting chains.
+4. Introduce `Blueprint` for typed pipelines.
+
 ### Benchmark (reproducible, no extra deps)
 
 Run the included `timeit` benchmark to compare a pure-Python pipeline vs `Blueprint` in seconds. The benchmark builds the Blueprint in setup and measures `run()` only, reporting median timings:
@@ -118,7 +136,7 @@ Run the included `timeit` benchmark to compare a pure-Python pipeline vs `Bluepr
 uv run python bench/bench_blueprint_vs_python.py
 ```
 
-Note: Small inputs or short pipelines may show little difference; multi-stage pipelines are where boundary reduction tends to help.
+Note: Results vary by workload; some cases are slower. Treat this as measurement, not a promise of speedup.
 
 `multi_run` compares repeatedly calling `run()` on a single-op Blueprint vs a single `run()` over a multi-op Blueprint (measures boundary-crossing overhead).
 

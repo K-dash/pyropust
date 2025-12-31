@@ -117,6 +117,8 @@ res = (
 print(res.unwrap())  # "Value is 246"
 ```
 
+When to use: `map/and_then` is best for small, expression-style transforms where each step is a function.
+
 > [!TIP]
 > **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
 >
@@ -224,6 +226,8 @@ def process(data: str) -> Result[str, object]:
     text = yield Ok(data)
     return Ok(text.upper())
 ```
+
+When to use: `@do` reads like imperative code and is better when you need intermediate variables, early returns, or mixed steps.
 
 This is not syntax sugar over exceptions — it is structured propagation of `Result` values.
 

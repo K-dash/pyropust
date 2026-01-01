@@ -1,5 +1,8 @@
 use pyo3::exceptions::{PyRuntimeError, PyTypeError};
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
+
+use super::result::{err, ok, ResultObj};
 
 #[pyclass(name = "Option")]
 pub struct OptionObj {
@@ -208,6 +211,91 @@ impl OptionObj {
                 value: other.value.as_ref().map(|v| v.clone_ref(py)),
             },
             _ => none_(),
+        }
+    }
+
+    // Utility methods
+    fn flatten(&self, py: Python<'_>) -> PyResult<Self> {
+        if self.is_some {
+            let value = self.value.as_ref().expect("some value");
+            let option_type = py.get_type::<OptionObj>();
+            if !value.bind(py).is_instance(option_type.as_any())? {
+                return Err(PyTypeError::new_err(
+                    "flatten requires Some value to be an Option",
+                ));
+            }
+            let inner_ref: PyRef<'_, OptionObj> = value.extract(py)?;
+            Ok(clone_option(py, &inner_ref))
+        } else {
+            Ok(none_())
+        }
+    }
+
+    fn transpose(&self, py: Python<'_>) -> PyResult<ResultObj> {
+        if self.is_some {
+            let value = self.value.as_ref().expect("some value");
+            let result_type = py.get_type::<ResultObj>();
+            if !value.bind(py).is_instance(result_type.as_any())? {
+                return Err(PyTypeError::new_err(
+                    "transpose requires Some value to be a Result",
+                ));
+            }
+            let res_ref: PyRef<'_, ResultObj> = value.extract(py)?;
+            if res_ref.is_ok {
+                let inner_value = res_ref.ok.as_ref().expect("ok value").clone_ref(py);
+                let option_obj = some(inner_value);
+                let py_option = Py::new(py, option_obj)?;
+                Ok(ok(py_option.into()))
+            } else {
+                let err_value = res_ref.err.as_ref().expect("err value").clone_ref(py);
+                Ok(err(err_value))
+            }
+        } else {
+            let option_obj = none_();
+            let py_option = Py::new(py, option_obj)?;
+            Ok(ok(py_option.into()))
+        }
+    }
+
+    fn zip(&self, py: Python<'_>, other: &Self) -> PyResult<Self> {
+        if self.is_some && other.is_some {
+            let value1 = self.value.as_ref().expect("some value");
+            let value2 = other.value.as_ref().expect("some value");
+            let tuple = PyTuple::new(py, &[value1.clone_ref(py), value2.clone_ref(py)])?;
+            Ok(some(tuple.into()))
+        } else {
+            Ok(none_())
+        }
+    }
+
+    fn zip_with(&self, py: Python<'_>, other: &Self, f: Bound<'_, PyAny>) -> PyResult<Self> {
+        if self.is_some && other.is_some {
+            let value1 = self.value.as_ref().expect("some value");
+            let value2 = other.value.as_ref().expect("some value");
+            let result = f.call1((value1.clone_ref(py), value2.clone_ref(py)))?;
+            Ok(some(result.into()))
+        } else {
+            Ok(none_())
+        }
+    }
+
+    // Result conversion methods
+    fn ok_or(&self, py: Python<'_>, error: Py<PyAny>) -> ResultObj {
+        if self.is_some {
+            let value = self.value.as_ref().expect("some value").clone_ref(py);
+            ok(value)
+        } else {
+            err(error)
+        }
+    }
+
+    fn ok_or_else(&self, py: Python<'_>, f: Bound<'_, PyAny>) -> PyResult<ResultObj> {
+        if self.is_some {
+            let value = self.value.as_ref().expect("some value").clone_ref(py);
+            Ok(ok(value))
+        } else {
+            let error = f.call0()?;
+            Ok(err(error.into()))
         }
     }
 }

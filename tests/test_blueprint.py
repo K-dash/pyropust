@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from datetime import UTC, datetime
 
-from pyropust import Blueprint, ErrorKind, Ok, Op, Result, RopustError, do, run
+from pyropust import Blueprint, ErrorKind, Ok, Op, Result, do, run
 
 
 def test_blueprint_execution() -> None:
@@ -30,9 +30,7 @@ def test_do_with_blueprint() -> None:
     bp = Blueprint().pipe(Op.assert_str()).pipe(Op.split("@")).pipe(Op.index(1))
 
     @do
-    def workflow(
-        raw: str,
-    ) -> Generator[Result[object, RopustError], object, Result[str, RopustError]]:
+    def workflow(raw: str) -> Generator[Result[object], object, Result[str]]:
         domain = yield run(bp, raw)
         return Ok(f"Processed: {domain}")
 

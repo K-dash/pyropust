@@ -1,9 +1,10 @@
 use pyo3::exceptions::{PyBaseException, PyRuntimeError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyTuple, PyType};
+use pyo3::types::{PyAny, PyDict, PyList, PyTuple, PyType};
 use pyo3::Bound;
+use std::collections::HashMap;
 
-use super::error::build_ropust_error_from_pyerr;
+use super::error::{build_ropust_error_from_pyerr, ErrorKind, PathItem, RopustError};
 use super::option::{none_, some, OptionObj};
 
 #[pyclass(name = "Result")]
@@ -95,7 +96,7 @@ impl ResultObj {
             let mapped = f.call1((value.clone_ref(py),))?;
             Ok(ok(mapped.into()))
         } else {
-            Ok(err(self.err.as_ref().expect("err value").clone_ref(py)))
+            Ok(err(py, self.err.as_ref().expect("err value").clone_ref(py)))
         }
     }
 
@@ -105,7 +106,7 @@ impl ResultObj {
         } else {
             let value = self.err.as_ref().expect("err value");
             let mapped = f.call1((value.clone_ref(py),))?;
-            Ok(err(mapped.into()))
+            Ok(err(py, mapped.into()))
         }
     }
 
@@ -227,7 +228,7 @@ impl ResultObj {
             let out_ref: PyRef<'_, ResultObj> = out.extract()?;
             Ok(clone_result(py, &out_ref))
         } else {
-            Ok(err(self.err.as_ref().expect("err value").clone_ref(py)))
+            Ok(err(py, self.err.as_ref().expect("err value").clone_ref(py)))
         }
     }
 
@@ -263,7 +264,7 @@ impl ResultObj {
             let inner_ref: PyRef<'_, ResultObj> = value.extract(py)?;
             Ok(clone_result(py, &inner_ref))
         } else {
-            Ok(err(self.err.as_ref().expect("err value").clone_ref(py)))
+            Ok(err(py, self.err.as_ref().expect("err value").clone_ref(py)))
         }
     }
 
@@ -287,10 +288,80 @@ impl ResultObj {
             }
         } else {
             let err_value = self.err.as_ref().expect("err value").clone_ref(py);
-            let result_obj = err(err_value);
+            let result_obj = err(py, err_value);
             let py_result = Py::new(py, result_obj)?;
             Ok(some(py_result.into()))
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (message, *, code = "context", metadata = None, op = None, path = None, expected = None, got = None))]
+    fn context(
+        &self,
+        py: Python<'_>,
+        message: &str,
+        code: &str,
+        metadata: Option<Py<PyAny>>,
+        op: Option<String>,
+        path: Option<Py<PyAny>>,
+        expected: Option<String>,
+        got: Option<String>,
+    ) -> PyResult<Self> {
+        if self.is_ok {
+            return Ok(clone_result_value(py, self));
+        }
+
+        let err_value = self.err.as_ref().expect("err value").clone_ref(py);
+        let err_ref = err_value.bind(py).extract::<PyRef<'_, RopustError>>()?;
+
+        let mut merged_metadata = err_ref.metadata.clone();
+        let extra_metadata = extract_metadata(py, metadata)?;
+        merged_metadata.extend(extra_metadata);
+
+        let path = match path {
+            Some(path_value) => extract_path(py, path_value)?,
+            None => err_ref.path.clone(),
+        };
+
+        let new_err = RopustError {
+            kind: err_ref.kind,
+            code: code.to_string(),
+            message: message.to_string(),
+            metadata: merged_metadata,
+            op: op.or_else(|| err_ref.op.clone()),
+            path,
+            expected: expected.or_else(|| err_ref.expected.clone()),
+            got: got.or_else(|| err_ref.got.clone()),
+            cause: Some(error_repr(&err_ref)),
+        };
+        Ok(err(py, Py::new(py, new_err)?.into()))
+    }
+
+    fn with_code(&self, py: Python<'_>, code: &str) -> PyResult<Self> {
+        if self.is_ok {
+            return Ok(clone_result_value(py, self));
+        }
+        let err_value = self.err.as_ref().expect("err value").clone_ref(py);
+        let err_ref = err_value.bind(py).extract::<PyRef<'_, RopustError>>()?;
+        let mut new_err = err_ref.clone();
+        new_err.code = code.to_string();
+        Ok(err(py, Py::new(py, new_err)?.into()))
+    }
+
+    fn map_err_code(&self, py: Python<'_>, prefix: &str) -> PyResult<Self> {
+        if self.is_ok {
+            return Ok(clone_result_value(py, self));
+        }
+        let err_value = self.err.as_ref().expect("err value").clone_ref(py);
+        let err_ref = err_value.bind(py).extract::<PyRef<'_, RopustError>>()?;
+        let mut new_err = err_ref.clone();
+        let prefix_dot = format!("{prefix}.");
+        if new_err.code.is_empty() {
+            new_err.code = prefix.to_string();
+        } else if !new_err.code.starts_with(&prefix_dot) {
+            new_err.code = format!("{prefix}.{}", new_err.code);
+        }
+        Ok(err(py, Py::new(py, new_err)?.into()))
     }
 
     #[classmethod]
@@ -344,8 +415,8 @@ pub fn py_ok(value: Py<PyAny>) -> ResultObj {
 }
 
 #[pyfunction(name = "Err")]
-pub fn py_err(error: Py<PyAny>) -> ResultObj {
-    err(error)
+pub fn py_err(py: Python<'_>, error: Py<PyAny>) -> ResultObj {
+    err(py, error)
 }
 
 // Internal constructor functions
@@ -357,11 +428,12 @@ pub fn ok(value: Py<PyAny>) -> ResultObj {
     }
 }
 
-pub fn err(error: Py<PyAny>) -> ResultObj {
+pub fn err(py: Python<'_>, error: Py<PyAny>) -> ResultObj {
+    let normalized = normalize_error(py, error);
     ResultObj {
         is_ok: false,
         ok: None,
-        err: Some(error),
+        err: Some(normalized),
     }
 }
 
@@ -371,6 +443,23 @@ fn clone_result(py: Python<'_>, out_ref: &PyRef<'_, ResultObj>) -> ResultObj {
         ok: out_ref.ok.as_ref().map(|v| v.clone_ref(py)),
         err: out_ref.err.as_ref().map(|v| v.clone_ref(py)),
     }
+}
+
+fn clone_result_value(py: Python<'_>, out_ref: &ResultObj) -> ResultObj {
+    ResultObj {
+        is_ok: out_ref.is_ok,
+        ok: out_ref.ok.as_ref().map(|v| v.clone_ref(py)),
+        err: out_ref.err.as_ref().map(|v| v.clone_ref(py)),
+    }
+}
+
+fn error_repr(err: &RopustError) -> String {
+    format!(
+        "RopustError(kind=ErrorKind.{}, code='{}', message='{}')",
+        err.kind.as_str(),
+        err.code,
+        err.message
+    )
 }
 
 fn should_catch(py: Python<'_>, err: &PyErr, exceptions: &Bound<'_, PyTuple>) -> PyResult<bool> {
@@ -388,5 +477,70 @@ fn should_catch(py: Python<'_>, err: &PyErr, exceptions: &Bound<'_, PyTuple>) ->
 
 fn ropust_error_from_exception(py: Python<'_>, py_err: PyErr) -> ResultObj {
     let err_obj = build_ropust_error_from_pyerr(py, py_err, "py_exception");
-    err(err_obj.into())
+    err(py, err_obj.into())
+}
+
+fn normalize_error(py: Python<'_>, error: Py<PyAny>) -> Py<PyAny> {
+    let error_ref = error.bind(py);
+    if error_ref.extract::<PyRef<'_, RopustError>>().is_ok() {
+        return error;
+    }
+
+    let base_exc = py.get_type::<PyBaseException>();
+    if error_ref.is_instance(base_exc.as_any()).unwrap_or(false) {
+        let py_err = PyErr::from_value(error_ref.clone());
+        let err_obj = build_ropust_error_from_pyerr(py, py_err, "py_exception");
+        return err_obj.into();
+    }
+
+    let message = error_ref
+        .extract::<String>()
+        .unwrap_or_else(|_| "<error>".to_string());
+    let err_obj = RopustError {
+        kind: ErrorKind::InvalidInput,
+        code: "custom".to_string(),
+        message,
+        metadata: HashMap::new(),
+        op: None,
+        path: Vec::new(),
+        expected: None,
+        got: None,
+        cause: None,
+    };
+    Py::new(py, err_obj).expect("ropust error alloc").into()
+}
+
+fn extract_metadata(
+    py: Python<'_>,
+    metadata: Option<Py<PyAny>>,
+) -> PyResult<HashMap<String, String>> {
+    let mut data = HashMap::new();
+    let Some(meta_value) = metadata else {
+        return Ok(data);
+    };
+    let meta_dict = meta_value.bind(py).cast_exact::<PyDict>()?;
+    for (k, v) in meta_dict.iter() {
+        let key = k.extract::<String>()?;
+        let value = v.extract::<String>()?;
+        data.insert(key, value);
+    }
+    Ok(data)
+}
+
+fn extract_path(py: Python<'_>, path: Py<PyAny>) -> PyResult<Vec<PathItem>> {
+    let path_value = path.bind(py);
+    let list = path_value.cast_exact::<PyList>()?;
+    let mut path = Vec::new();
+    for item in list.iter() {
+        if let Ok(key) = item.extract::<String>() {
+            path.push(PathItem::Key(key));
+        } else if let Ok(index) = item.extract::<usize>() {
+            path.push(PathItem::Index(index));
+        } else {
+            return Err(PyTypeError::new_err(
+                "invalid path element (expected str or int)",
+            ));
+        }
+    }
+    Ok(path)
 }

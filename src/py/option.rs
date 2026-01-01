@@ -248,7 +248,7 @@ impl OptionObj {
                 Ok(ok(py_option.into()))
             } else {
                 let err_value = res_ref.err.as_ref().expect("err value").clone_ref(py);
-                Ok(err(err_value))
+                Ok(err(py, err_value))
             }
         } else {
             let option_obj = none_();
@@ -285,7 +285,7 @@ impl OptionObj {
             let value = self.value.as_ref().expect("some value").clone_ref(py);
             ok(value)
         } else {
-            err(error)
+            err(py, error)
         }
     }
 
@@ -295,7 +295,7 @@ impl OptionObj {
             Ok(ok(value))
         } else {
             let error = f.call0()?;
-            Ok(err(error.into()))
+            Ok(err(py, error.into()))
         }
     }
 }

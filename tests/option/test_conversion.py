@@ -29,7 +29,7 @@ class TestOptionOkOr:
         opt = none_val()
         result = opt.ok_or("error")
         assert result.is_err()
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_err().message == "error"
 
     def test_ok_or_preserves_value_type(self) -> None:
         """Verify ok_or preserves value type."""
@@ -47,7 +47,7 @@ class TestOptionOkOr:
         error = ValueError("validation failed")
         result = opt.ok_or(error)
         assert result.is_err()
-        assert result.unwrap_err() == error
+        assert result.unwrap_err().message.endswith("validation failed")
 
     def test_ok_or_enables_result_chaining(self) -> None:
         """Use case: convert Option to Result for error handling."""
@@ -61,7 +61,7 @@ class TestOptionOkOr:
 
         opt_none = none_val()
         error = opt_none.ok_or("missing").unwrap_err()
-        assert error == "missing"
+        assert error.message == "missing"
 
 
 class TestOptionOkOrElse:
@@ -83,7 +83,7 @@ class TestOptionOkOrElse:
         opt = none_val()
         result = opt.ok_or_else(lambda: "computed error")
         assert result.is_err()
-        assert result.unwrap_err() == "computed error"
+        assert result.unwrap_err().message == "computed error"
 
     def test_ok_or_else_function_not_called_on_some(self) -> None:
         """Verify error function is not called when Some."""
@@ -108,8 +108,7 @@ class TestOptionOkOrElse:
         result = opt.ok_or_else(lambda: ValueError("dynamically created error"))
         assert result.is_err()
         error = result.unwrap_err()
-        assert isinstance(error, ValueError)
-        assert str(error) == "dynamically created error"
+        assert error.message.endswith("dynamically created error")
 
     def test_ok_or_else_enables_lazy_error_creation(self) -> None:
         """Use case: avoid creating error unless needed."""
@@ -124,7 +123,7 @@ class TestOptionOkOrElse:
         opt_none = none_val()
         # Error is only created when needed
         error = opt_none.ok_or_else(lambda: "lazy error").unwrap_err()
-        assert error == "lazy error"
+        assert error.message == "lazy error"
 
 
 def expensive_error() -> str:

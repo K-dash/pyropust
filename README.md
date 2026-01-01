@@ -56,7 +56,7 @@ You do not need to switch everything at once. A realistic path is:
 
 ### 1) Result and Option
 
-Rust-style `Result[T, E]` and `Option[T]` as first-class values.
+Rust-style `Result[T]` and `Option[T]` as first-class values.
 
 ```python
 from pyropust import Ok, Err, Some, None_
@@ -68,12 +68,12 @@ maybe = Some(42)
 empty = None_()
 ```
 
-Result is explicit about failures. You can return it from functions and branch on `is_ok / is_err` without exceptions.
+Result is explicit about failures. All failures are represented as `RopustError`. You can return it from functions and branch on `is_ok / is_err` without exceptions.
 
 ```python
 from pyropust import Ok, Err, Result
 
-def divide(a: int, b: int) -> Result[float, str]:
+def divide(a: int, b: int) -> Result[float]:
     if b == 0:
         return Err("division by zero")
     return Ok(a / b)
@@ -83,6 +83,7 @@ if res.is_ok():
     value = res.unwrap()
 else:
     error = res.unwrap_err()
+    print(error.message)
 ```
 
 Keep Option short and explicit: you must unwrap or provide defaults.
@@ -111,8 +112,8 @@ from pyropust import Ok
 
 res = (
     Ok("123")
-    .map(int)                # Result[int, E]
-    .map(lambda x: x * 2)    # Result[int, E]
+    .map(int)                # Result[int]
+    .map(lambda x: x * 2)    # Result[int]
     .and_then(lambda x: Ok(f"Value is {x}"))
 )
 print(res.unwrap())  # "Value is 246"
@@ -121,20 +122,57 @@ print(res.unwrap())  # "Value is 246"
 When to use: `map/and_then` is best for small, expression-style transforms where each step is a function.
 
 > [!TIP]
-> **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the error type is correctly inferred.
+> **Type Hint for `and_then`**: When using `and_then` with a callback that may return `Err`, define the initial `Result` with an explicit return type annotation. This ensures the Ok type is correctly inferred.
 >
 > ```python
 > from pyropust import Ok, Err, Result
 >
-> def fetch_data() -> Result[int, str]:  # Declare error type here
+> def fetch_data() -> Result[int]:  # Declare ok type here
 >     return Ok(42)
 >
-> def validate(x: int) -> Result[int, str]:
+> def validate(x: int) -> Result[int]:
 >     return Err("invalid") if x < 0 else Ok(x)
 >
 > # Error type flows correctly through the chain
 > result = fetch_data().and_then(validate)
 > ```
+
+#### Adding context and error codes
+
+In real applications, errors often need additional context as they move up the stack.
+pyropust provides helpers inspired by Rust’s `context` and error mapping patterns.
+
+```python
+from pyropust import Result, Err
+
+def load_config(path: str) -> Result[str]:
+    return Err("file not found")
+
+result = load_config("/etc/app.toml").context(
+    "failed to load application config",
+    code="config.load",
+)
+```
+
+- `context(...)` adds human-readable context while preserving the original cause
+- The original error is kept as a structured cause chain
+
+You can also modify error codes for classification and observability:
+
+```python
+result = load_config("/etc/app.toml").with_code("config.not_found")
+
+result = load_config("/etc/app.toml").map_err_code("startup")
+```
+
+Error codes are stable, machine-facing identifiers.
+Messages are for humans and may change; codes are for branching, testing, and observability.
+
+These helpers make it easy to:
+
+- Add meaning at higher layers
+- Classify failures without losing detail
+- Keep error handling explicit and testable
 
 ### 2) Blueprint: typed pipelines
 
@@ -223,12 +261,13 @@ The `@do` decorator enables linear, Rust-style propagation of `Result`.
 from pyropust import Ok, Result, do
 
 @do
-def process(data: str) -> Result[str, object]:
+def process(data: str) -> Result[str]:
     text = yield Ok(data)
     return Ok(text.upper())
 ```
 
 When to use: `@do` reads like imperative code and is better when you need intermediate variables, early returns, or mixed steps.
+Prefer `context` for adding meaning instead of catching exceptions.
 
 This is not syntax sugar over exceptions — it is structured propagation of `Result` values.
 

@@ -3,14 +3,14 @@
 Includes: map, map_err, map_or, map_or_else, inspect, inspect_err.
 
 Note: Type annotations are required when using Ok()/Err() constructors
-because they have inferred types Result[T, Never] and Result[Never, E].
+because they have inferred types Result[T] and Result[Never].
 This matches Rust's type system design. Use function return types or
 intermediate functions to satisfy strict type checking.
 """
 
 from __future__ import annotations
 
-from pyropust import Err, Ok, Result
+from pyropust import Err, Ok, Result, RopustError
 
 
 class TestResultMap:
@@ -27,21 +27,23 @@ class TestResultMap:
         assert res.unwrap() == 246
 
     def test_map_skips_on_err(self) -> None:
-        res: Result[int, str] = Err("error").map(lambda x: x * 2)
+        res: Result[int] = Err("error").map(lambda x: x * 2)
         assert res.is_err()
-        assert res.unwrap_err() == "error"
+        assert res.unwrap_err().message == "error"
 
 
 class TestResultMapErr:
     """Test Result.map_err() for transforming Err values."""
 
     def test_map_err_transforms_err_value(self) -> None:
-        res: Result[int, str] = Err("error").map_err(lambda e: e.upper())
+        res: Result[int] = Err("error").map_err(
+            lambda e: RopustError.new(code=e.code, message=e.message.upper(), kind=e.kind)
+        )
         assert res.is_err()
-        assert res.unwrap_err() == "ERROR"
+        assert res.unwrap_err().message == "ERROR"
 
     def test_map_err_skips_on_ok(self) -> None:
-        res = Ok(10).map_err(lambda e: f"Transformed: {e}")
+        res = Ok(10).map_err(lambda e: e)
         assert res.is_ok()
         assert res.unwrap() == 10
 
@@ -55,7 +57,7 @@ class TestResultMapOr:
         assert result == 20
 
     def test_map_or_returns_default_on_err(self) -> None:
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         result = res.map_or(0, lambda x: x * 2)
         assert result == 0
 
@@ -66,7 +68,7 @@ class TestResultMapOr:
         assert result == "Value: 42"
 
         # Use default on Err
-        res_err: Result[int, str] = Err("error")
+        res_err: Result[int] = Err("error")
         result_err = res_err.map_or("default", lambda x: f"Value: {x}")
         assert result_err == "default"
 
@@ -79,7 +81,7 @@ class TestResultMapOr:
             called = True
             return 999
 
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         result = res.map_or(0, transform)
         assert result == 0
         assert called is False
@@ -94,14 +96,14 @@ class TestResultMapOrElse:
         assert result == 20
 
     def test_map_or_else_computes_default_on_err(self) -> None:
-        res: Result[int, str] = Err("error")
-        result = res.map_or_else(lambda e: len(e), lambda x: x * 2)
+        res: Result[int] = Err("error")
+        result = res.map_or_else(lambda e: len(e.message), lambda x: x * 2)
         assert result == 5
 
     def test_map_or_else_receives_error_value(self) -> None:
         """Verify default function receives the actual error."""
-        res: Result[int, int] = Err(404)
-        result = res.map_or_else(lambda code: code * 10, lambda x: x * 2)
+        res: Result[int] = Err("404")
+        result = res.map_or_else(lambda code: int(code.message) * 10, lambda x: x * 2)
         assert result == 4040
 
     def test_map_or_else_functions_not_both_called(self) -> None:
@@ -114,7 +116,7 @@ class TestResultMapOrElse:
             transform_called = True
             return 999
 
-        def compute_default(_e: str) -> int:
+        def compute_default(_e: object) -> int:
             nonlocal default_called
             default_called = True
             return 0
@@ -127,7 +129,7 @@ class TestResultMapOrElse:
 
         # Err case
         transform_called = False
-        res_err: Result[int, str] = Err("error")
+        res_err: Result[int] = Err("error")
         res_err.map_or_else(compute_default, transform)
         assert transform_called is False
         assert default_called is True
@@ -156,11 +158,11 @@ class TestResultInspect:
             nonlocal called
             called = True
 
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         result = res.inspect(side_effect)
         assert called is False
         assert result.is_err()
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_err().message == "error"
 
     def test_inspect_enables_chaining(self) -> None:
         """Verify inspect returns Result for method chaining."""
@@ -178,10 +180,10 @@ class TestResultInspect:
 
     def test_inspect_preserves_error(self) -> None:
         """Verify inspect doesn't affect Err."""
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         result = res.inspect(lambda _x: None).map(lambda x: x * 2)
         assert result.is_err()
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_err().message == "error"
 
     def test_inspect_with_print_debugging(self) -> None:
         """Use case: debugging with side effects."""
@@ -206,20 +208,21 @@ class TestResultInspectErr:
     def test_inspect_err_calls_function_on_err(self) -> None:
         called_with = None
 
-        def side_effect(e: str) -> None:
+        def side_effect(e: RopustError) -> None:
             nonlocal called_with
             called_with = e
 
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         result = res.inspect_err(side_effect)
-        assert called_with == "error"
+        assert called_with is not None
+        assert called_with.message == "error"
         assert result.is_err()
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_err().message == "error"
 
     def test_inspect_err_not_called_on_ok(self) -> None:
         called = False
 
-        def side_effect(_e: str) -> None:
+        def side_effect(_e: object) -> None:
             nonlocal called
             called = True
 
@@ -233,15 +236,17 @@ class TestResultInspectErr:
         """Verify inspect_err returns Result for method chaining."""
         log: list[str] = []
 
-        res: Result[int, str] = (
+        res: Result[int] = (
             Err("error1")
-            .inspect_err(lambda e: log.append(e))
-            .map_err(lambda e: f"{e}_mapped")
-            .inspect_err(lambda e: log.append(e))
+            .inspect_err(lambda e: log.append(e.message))
+            .map_err(
+                lambda e: RopustError.new(code=e.code, message=f"{e.message}_mapped", kind=e.kind)
+            )
+            .inspect_err(lambda e: log.append(e.message))
         )
 
         assert log == ["error1", "error1_mapped"]
-        assert res.unwrap_err() == "error1_mapped"
+        assert res.unwrap_err().message == "error1_mapped"
 
     def test_inspect_err_preserves_ok(self) -> None:
         """Verify inspect_err doesn't affect Ok."""
@@ -256,10 +261,10 @@ class TestResultInspectErr:
 
         result = (
             Err("validation failed")
-            .inspect_err(lambda e: errors_logged.append(f"Error: {e}"))
-            .map_err(lambda e: e.upper())
-            .inspect_err(lambda e: errors_logged.append(f"Transformed: {e}"))
+            .inspect_err(lambda e: errors_logged.append(f"Error: {e.message}"))
+            .map_err(lambda e: RopustError.new(code=e.code, message=e.message.upper(), kind=e.kind))
+            .inspect_err(lambda e: errors_logged.append(f"Transformed: {e.message}"))
         )
 
         assert errors_logged == ["Error: validation failed", "Transformed: VALIDATION FAILED"]
-        assert result.unwrap_err() == "VALIDATION FAILED"
+        assert result.unwrap_err().message == "VALIDATION FAILED"

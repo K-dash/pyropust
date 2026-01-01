@@ -1,7 +1,7 @@
 """Tests for Result query methods (is_ok_and, is_err_and).
 
 Note: Type annotations are required when using Ok()/Err() constructors
-because they have inferred types Result[T, Never] and Result[Never, E].
+because they have inferred types Result[T] and Result[Never].
 This matches Rust's type system design. Use function return types or
 intermediate functions to satisfy strict type checking.
 """
@@ -23,7 +23,7 @@ class TestResultIsOkAnd:
         assert res.is_ok_and(lambda x: x > 5) is False
 
     def test_returns_false_when_err(self) -> None:
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         assert res.is_ok_and(lambda x: x > 5) is False
 
     def test_accepts_truthy_values(self) -> None:
@@ -52,7 +52,7 @@ class TestResultIsOkAnd:
             called = True
             return True
 
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         assert res.is_ok_and(side_effect_predicate) is False
         assert called is False
 
@@ -61,47 +61,41 @@ class TestResultIsErrAnd:
     """Test Result.is_err_and() for conditional Err checking."""
 
     def test_returns_true_when_err_and_predicate_true(self) -> None:
-        res: Result[int, str] = Err("error")
-        assert res.is_err_and(lambda e: "err" in e) is True
+        res: Result[int] = Err("error")
+        assert res.is_err_and(lambda e: "err" in e.message) is True
 
     def test_returns_false_when_err_but_predicate_false(self) -> None:
-        res: Result[int, str] = Err("success")
-        assert res.is_err_and(lambda e: "err" in e) is False
+        res: Result[int] = Err("success")
+        assert res.is_err_and(lambda e: "err" in e.message) is False
 
     def test_returns_false_when_ok(self) -> None:
-        res: Result[int, str] = Ok(10)
-        assert res.is_err_and(lambda e: "err" in e) is False
+        res: Result[int] = Ok(10)
+        assert res.is_err_and(lambda e: "err" in e.message) is False
 
     def test_accepts_truthy_values(self) -> None:
         """Verify Python truthiness protocol works."""
         # Non-empty string is truthy
-        res_err: Result[int, str] = Err("error")
-        assert res_err.is_err_and(lambda e: e) is True
+        res_err: Result[int] = Err("error")
+        assert res_err.is_err_and(lambda e: e.message) is True
         # Empty string is falsy
-        res_empty: Result[int, str] = Err("")
-        assert res_empty.is_err_and(lambda e: e) is False
+        res_empty: Result[int] = Err("")
+        assert res_empty.is_err_and(lambda e: e.message) is False
 
     def test_predicate_receives_err_value(self) -> None:
         """Verify predicate gets the actual Err value."""
-
-        class CustomError:
-            def __init__(self, code: int) -> None:
-                self.code = code
-
-        err_obj = CustomError(404)
-        res: Result[int, CustomError] = Err(err_obj)
-        assert res.is_err_and(lambda e: e.code == 404) is True
-        assert res.is_err_and(lambda e: e.code == 500) is False
+        res: Result[int] = Err("404")
+        assert res.is_err_and(lambda e: e.message == "404") is True
+        assert res.is_err_and(lambda e: e.message == "500") is False
 
     def test_predicate_not_called_when_ok(self) -> None:
         """Verify short-circuit behavior - predicate shouldn't be called for Ok."""
         called = False
 
-        def side_effect_predicate(_e: str) -> bool:
+        def side_effect_predicate(_e: object) -> bool:
             nonlocal called
             called = True
             return True
 
-        res: Result[int, str] = Ok(10)
+        res: Result[int] = Ok(10)
         assert res.is_err_and(side_effect_predicate) is False
         assert called is False

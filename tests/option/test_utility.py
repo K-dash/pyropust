@@ -70,7 +70,7 @@ class TestOptionTranspose:
     def test_transpose_some_ok(self) -> None:
         """Transpose Some(Ok(value)) -> Ok(Some(value))."""
 
-        def make_some_ok() -> Option[Result[int, str]]:
+        def make_some_ok() -> Option[Result[int]]:
             return Some(Ok(42))
 
         opt = make_some_ok()
@@ -83,17 +83,17 @@ class TestOptionTranspose:
     def test_transpose_some_err(self) -> None:
         """Transpose Some(Err(error)) -> Err(error)."""
 
-        def make_err() -> Result[int, str]:
+        def make_err() -> Result[int]:
             return Err("error")
 
-        opt: Option[Result[int, str]] = Some(make_err())
+        opt: Option[Result[int]] = Some(make_err())
         result = opt.transpose()
         assert result.is_err()
-        assert result.unwrap_err() == "error"
+        assert result.unwrap_err().message == "error"
 
     def test_transpose_none(self) -> None:
         """Transpose None -> Ok(None)."""
-        opt: Option[Result[int, str]] = None_()
+        opt: Option[Result[int]] = None_()
         result = opt.transpose()
         assert result.is_ok()
         unwrapped = result.unwrap()
@@ -108,15 +108,15 @@ class TestOptionTranspose:
     def test_transpose_round_trip_some(self) -> None:
         """Verify transpose is reversible for Some(Ok(value))."""
 
-        def make_option() -> Option[Result[int, str]]:
+        def make_option() -> Option[Result[int]]:
             return Some(Ok(42))
 
         opt = make_option()
-        # Option[Result[T, E]] -> Result[Option[T], E]
+        # Option[Result[T]] -> Result[Option[T]]
         transposed = opt.transpose()
         assert transposed.is_ok()
 
-        # Result[Option[T], E] -> Option[Result[T, E]]
+        # Result[Option[T]] -> Option[Result[T]]
         back = transposed.transpose()
         assert back.is_some()
         inner_result = back.unwrap()
@@ -126,15 +126,15 @@ class TestOptionTranspose:
     def test_transpose_round_trip_none(self) -> None:
         """Verify transpose is reversible for None."""
 
-        def make_option() -> Option[Result[int, str]]:
+        def make_option() -> Option[Result[int]]:
             return None_()
 
         opt = make_option()
-        # Option[Result[T, E]] -> Result[Option[T], E]
+        # Option[Result[T]] -> Result[Option[T]]
         transposed = opt.transpose()
         assert transposed.is_ok()
 
-        # Result[Option[T], E] -> Option[Result[T, E]]
+        # Result[Option[T]] -> Option[Result[T]]
         back = transposed.transpose()
         assert back.is_none()
 

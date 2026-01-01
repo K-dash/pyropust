@@ -11,7 +11,7 @@ class TestResultManualHandling:
     def test_readme_example_divide_function(self) -> None:
         """Verify the README divide example works."""
 
-        def divide(a: int, b: int) -> Result[float, str]:
+        def divide(a: int, b: int) -> Result[float]:
             if b == 0:
                 return Err("Division by zero")
             return Ok(a / b)
@@ -24,4 +24,4 @@ class TestResultManualHandling:
         # Error case
         res_err = divide(10, 0)
         assert res_err.is_err()
-        assert res_err.unwrap_err() == "Division by zero"
+        assert res_err.unwrap_err().message == "Division by zero"

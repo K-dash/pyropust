@@ -36,21 +36,21 @@ if TYPE_CHECKING:
     # Result: Constructors
     # ==========================================================================
 
-    # Ok() returns Result[T, Never] - error type is Never (can unify with any E)
-    ok_int: Result[int, Never] = Ok(42)
-    assert_type(Ok(42), Result[int, Never])
-    assert_type(Ok("hello"), Result[str, Never])
+    # Ok() returns Result[T]
+    ok_int: Result[int] = Ok(42)
+    assert_type(Ok(42), Result[int])
+    assert_type(Ok("hello"), Result[str])
 
-    # Err() returns Result[Never, E] - ok type is Never (can unify with any T)
-    err_str: Result[Never, str] = Err("error")
-    assert_type(Err("error"), Result[Never, str])
-    assert_type(Err(ValueError("oops")), Result[Never, ValueError])
+    # Err() returns Result[Never]
+    err_str: Result[Never] = Err("error")
+    assert_type(Err("error"), Result[Never])
+    assert_type(Err(ValueError("oops")), Result[Never])
 
     # ==========================================================================
     # Result: Methods
     # ==========================================================================
 
-    def get_result() -> Result[int, str]:
+    def get_result() -> Result[int]:
         return Ok(10)
 
     res = get_result()
@@ -63,46 +63,51 @@ if TYPE_CHECKING:
     assert_type(res.unwrap(), int)
 
     # unwrap_err returns the Err value type
-    assert_type(res.unwrap_err(), str)
+    assert_type(res.unwrap_err(), RopustError)
 
     # unwrap_or_raise returns ok value type
     assert_type(res.unwrap_or_raise(RuntimeError("boom")), int)
 
-    # attempt returns Result[T, RopustError]
+    # attempt returns Result[T]
     attempt_ok = Result.attempt(lambda: 123)
-    assert_type(attempt_ok, Result[int, RopustError])
+    assert_type(attempt_ok, Result[int])
 
-    # map transforms the Ok value, preserves error type
+    # map transforms the Ok value
     mapped = res.map(lambda x: str(x))
-    assert_type(mapped, Result[str, str])
+    assert_type(mapped, Result[str])
 
     # map with different output type
     mapped_float = res.map(lambda x: x * 2.5)
-    assert_type(mapped_float, Result[float, str])
+    assert_type(mapped_float, Result[float])
 
     # map_err transforms the Err value, preserves ok type
-    mapped_err = res.map_err(lambda e: ValueError(e))
-    assert_type(mapped_err, Result[int, ValueError])
+    mapped_err = res.map_err(lambda e: e)
+    assert_type(mapped_err, Result[int])
+
+    # context/with_code/map_err_code return Result[T]
+    assert_type(res.context("extra context"), Result[int])
+    assert_type(res.with_code("parse.error"), Result[int])
+    assert_type(res.map_err_code("pipeline"), Result[int])
 
     # and_then chains Result-returning functions
-    def validate(x: int) -> Result[str, str]:
+    def validate(x: int) -> Result[str]:
         return Ok(str(x)) if x > 0 else Err("negative")
 
     chained = res.and_then(validate)
-    assert_type(chained, Result[str, str])
+    assert_type(chained, Result[str])
 
     # ==========================================================================
     # Result: Chaining (README example)
     # ==========================================================================
 
     # Functional chaining with explicit error type annotation
-    def fetch_value() -> Result[str, str]:
+    def fetch_value() -> Result[str]:
         return Ok("123")
 
     chain_result = (
         fetch_value().map(int).map(lambda x: x * 2).and_then(lambda x: Ok(f"Value is {x}"))
     )
-    assert_type(chain_result, Result[str, str])
+    assert_type(chain_result, Result[str])
 
     # ==========================================================================
     # Option: Constructors
@@ -167,7 +172,7 @@ if TYPE_CHECKING:
         return int(value)
 
     parsed = parse_int("123")
-    assert_type(parsed, Result[int, RopustError])
+    assert_type(parsed, Result[int])
 
     # ==========================================================================
     # Operator: Flat API (backward compatible)
@@ -302,7 +307,7 @@ if TYPE_CHECKING:
 
     bp_for_run = Blueprint.for_type(str).pipe(Op.split("@"))
     result_from_run = run(bp_for_run, "a@b")
-    assert_type(result_from_run, Result[list[str], RopustError])
+    assert_type(result_from_run, Result[list[str]])
 
     # ==========================================================================
     # RopustError properties
@@ -336,12 +341,10 @@ if TYPE_CHECKING:
     # ==========================================================================
 
     @do
-    def to_upper(
-        value: str,
-    ) -> Generator[Result[str, object], str, Result[str, object]]:
+    def to_upper(value: str) -> Generator[Result[str], str, Result[str]]:
         text = yield Ok(value)
         return Ok(text.upper())
 
     # @do decorated function returns Result
-    do_result: Result[str, object] = to_upper("hello")
-    assert_type(to_upper("hello"), Result[str, object])
+    do_result: Result[str] = to_upper("hello")
+    assert_type(to_upper("hello"), Result[str])

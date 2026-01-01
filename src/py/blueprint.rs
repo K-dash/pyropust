@@ -286,5 +286,5 @@ fn ropust_error(
         },
     )
     .expect("ropust error alloc");
-    err(err_obj.into())
+    err(py, err_obj.into())
 }

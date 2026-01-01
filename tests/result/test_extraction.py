@@ -1,7 +1,7 @@
 """Tests for Result extraction methods (expect, expect_err, unwrap_or, unwrap_or_else).
 
 Note: Type annotations are required when using Ok()/Err() constructors
-because they have inferred types Result[T, Never] and Result[Never, E].
+because they have inferred types Result[T] and Result[Never].
 This matches Rust's type system design. Use function return types or
 intermediate functions to satisfy strict type checking.
 """
@@ -21,7 +21,7 @@ class TestResultExpect:
         assert res.expect("should not fail") == 42
 
     def test_expect_raises_with_custom_message_on_err(self) -> None:
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         with pytest.raises(RuntimeError, match="custom error message"):
             res.expect("custom error message")
 
@@ -30,7 +30,7 @@ class TestResultExpect:
         assert res.expect("should work") == {"key": "value"}
 
     def test_expect_message_can_be_multiline(self) -> None:
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         with pytest.raises(RuntimeError, match=r"Line 1\nLine 2\nLine 3"):
             res.expect("Line 1\nLine 2\nLine 3")
 
@@ -39,8 +39,8 @@ class TestResultExpectErr:
     """Test Result.expect_err() for extracting Err value with custom error message."""
 
     def test_expect_err_returns_err_value(self) -> None:
-        res: Result[int, str] = Err("error message")
-        assert res.expect_err("should not fail") == "error message"
+        res: Result[int] = Err("error message")
+        assert res.expect_err("should not fail").message == "error message"
 
     def test_expect_err_raises_with_custom_message_on_ok(self) -> None:
         res = Ok(42)
@@ -49,8 +49,8 @@ class TestResultExpectErr:
 
     def test_expect_err_works_with_exception_objects(self) -> None:
         error = ValueError("validation failed")
-        res: Result[int, Exception] = Err(error)
-        assert res.expect_err("should work") == error
+        res: Result[int] = Err(error)
+        assert res.expect_err("should work").message.endswith("validation failed")
 
 
 class TestResultUnwrapOr:
@@ -61,7 +61,7 @@ class TestResultUnwrapOr:
         assert res.unwrap_or(999) == 10
 
     def test_unwrap_or_returns_default_on_err(self) -> None:
-        res: Result[int, str] = Err("error")
+        res: Result[int] = Err("error")
         assert res.unwrap_or(999) == 999
 
     def test_unwrap_or_works_with_different_types(self) -> None:
@@ -70,15 +70,15 @@ class TestResultUnwrapOr:
         assert res.unwrap_or("default") == "hello"
 
         # Err case with string
-        res_err: Result[str, str] = Err("error")
+        res_err: Result[str] = Err("error")
         assert res_err.unwrap_or("default") == "default"
 
     def test_unwrap_or_default_can_be_none(self) -> None:
-        res: Result[str, str] = Err("error")
+        res: Result[str] = Err("error")
         assert res.unwrap_or(None) is None
 
     def test_unwrap_or_with_complex_default(self) -> None:
-        res: Result[list[int], str] = Err("error")
+        res: Result[list[int]] = Err("error")
         default = [1, 2, 3]
         assert res.unwrap_or(default) == [1, 2, 3]
 
@@ -91,20 +91,20 @@ class TestResultUnwrapOrElse:
         assert res.unwrap_or_else(lambda _e: 999) == 10
 
     def test_unwrap_or_else_computes_default_on_err(self) -> None:
-        res: Result[int, str] = Err("error")
-        assert res.unwrap_or_else(lambda e: len(e)) == 5
+        res: Result[int] = Err("error")
+        assert res.unwrap_or_else(lambda e: len(e.message)) == 5
 
     def test_unwrap_or_else_receives_err_value(self) -> None:
-        res: Result[int, str] = Err("custom error")
+        res: Result[int] = Err("custom error")
         # Function receives the actual error value
-        result = res.unwrap_or_else(lambda e: len(e) * 2)
+        result = res.unwrap_or_else(lambda e: len(e.message) * 2)
         assert result == 24  # len("custom error") * 2
 
     def test_unwrap_or_else_not_called_on_ok(self) -> None:
         """Verify function is not called when Result is Ok."""
         called = False
 
-        def compute_default(_e: str) -> int:
+        def compute_default(_e: object) -> int:
             nonlocal called
             called = True
             return 999
@@ -115,5 +115,5 @@ class TestResultUnwrapOrElse:
 
     def test_unwrap_or_else_with_type_conversion(self) -> None:
         # Error to default value type conversion
-        res: Result[str, int] = Err(404)
-        assert res.unwrap_or_else(lambda code: f"Error {code}") == "Error 404"
+        res: Result[str] = Err("404")
+        assert res.unwrap_or_else(lambda code: f"Error {code.message}") == "Error 404"

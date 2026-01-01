@@ -69,6 +69,7 @@ empty = None_()
 ```
 
 Result is explicit about failures. All failures are represented as `RopustError`. You can return it from functions and branch on `is_ok / is_err` without exceptions.
+Note: `unwrap()` is intended for tests, examples, and application boundaries. Inside libraries and pipelines, prefer structured propagation (`@do`, `context`, `and_then`).
 
 ```python
 from pyropust import Ok, Err, Result
@@ -85,6 +86,8 @@ else:
     error = res.unwrap_err()
     print(error.message)
 ```
+
+This pattern is useful for explanation and testing. In real code, prefer structured propagation with `@do`, combinators, or boundary helpers.
 
 Keep Option short and explicit: you must unwrap or provide defaults.
 

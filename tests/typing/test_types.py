@@ -39,6 +39,13 @@ class SampleCode(ErrorCode):
 
 
 if TYPE_CHECKING:
+
+    class AlphaCode(ErrorCode):
+        A = "a"
+
+    class BetaCode(ErrorCode):
+        B = "b"
+
     # ==========================================================================
     # Result: Constructors
     # ==========================================================================
@@ -55,6 +62,8 @@ if TYPE_CHECKING:
         Err(Error[SampleCode].new(code=SampleCode.ERROR, message="oops")),
         Result[Never, Error[SampleCode]],
     )
+    err_union: Result[Never, Error[AlphaCode | BetaCode]] = err(AlphaCode.A, "oops")
+    assert_type(err_union, Result[Never, Error[AlphaCode | BetaCode]])
 
     # ==========================================================================
     # Result: Methods

@@ -2,6 +2,7 @@
 
 [![Python versions](https://img.shields.io/pypi/pyversions/pyropust.svg)](https://pypi.org/project/pyropust/)
 [![PyPI](https://img.shields.io/pypi/v/pyropust.svg?color=blue)](https://pypi.org/project/pyropust/)
+[![codecov](https://codecov.io/github/K-dash/pyropust/graph/badge.svg?token=HaPSYBJktD)](https://codecov.io/github/K-dash/pyropust)
 
 **Rust-powered, type-safe pipelines for Python.**
 

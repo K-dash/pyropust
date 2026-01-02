@@ -1,0 +1,27 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+ignore:
+  # Ignore Rust source code (only Python test coverage is measured)
+  - "src/**/*"
+  - "target/**/*"
+  # Ignore type stub files (not executed)
+  - "**/*.pyi"
+  # Ignore test files themselves in coverage report
+  - "tests/**/*"
+  # Ignore tools and benchmarks
+  - "tools/**/*"
+  - "bench/**/*"
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false

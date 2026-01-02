@@ -138,6 +138,11 @@ description = "Run Python tests (pytest) via uv"
 command = "uv"
 args = ["run", "pytest", "-v"]
 
+[tasks.pytest-cov]
+description = "Run Python tests with coverage report"
+command = "uv"
+args = ["run", "pytest", "--cov=pyropust", "--cov-report=term-missing", "--cov-report=html", "--cov-report=xml"]
+
 [tasks.bench]
 description = "Run Blueprint vs Python timeit benchmark"
 command = "uv"

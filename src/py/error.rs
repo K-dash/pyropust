@@ -4,7 +4,7 @@ use pyo3::types::{PyAny, PyDict, PyList, PyString, PyType};
 use std::collections::HashMap;
 
 // Re-export from ops to avoid duplication
-pub use crate::ops::{ErrorKind, PathItem};
+pub use crate::error::{ErrorKind, PathItem};
 
 #[pyclass(frozen, name = "ErrorKind")]
 #[derive(Clone)]

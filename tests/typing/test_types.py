@@ -11,19 +11,16 @@ Run with:
 
 from __future__ import annotations
 
-from collections.abc import Generator, Mapping, Sequence
+from collections.abc import Generator
 from typing import TYPE_CHECKING, Never, assert_type
 
 from pyropust import (
-    Blueprint,
     Err,
     Error,
     ErrorCode,
     ErrorKind,
     None_,
     Ok,
-    Op,
-    Operator,
     Option,
     Result,
     Some,
@@ -32,7 +29,6 @@ from pyropust import (
     do,
     ensure,
     err,
-    run,
 )
 
 
@@ -199,141 +195,6 @@ if TYPE_CHECKING:
 
     parsed = parse_int("123")
     assert_type(parsed, Result[int, Error[ErrorCode]])
-
-    # ==========================================================================
-    # Operator: Flat API (backward compatible)
-    # ==========================================================================
-
-    # Text operators
-    assert_type(Op.split("@"), Operator[str, list[str]])
-    assert_type(Op.to_uppercase(), Operator[str, str])
-    assert_type(Op.trim(), Operator[str, str])
-    assert_type(Op.lower(), Operator[str, str])
-    assert_type(Op.replace("a", "b"), Operator[str, str])
-
-    # Core operators (len is universal: str/bytes/list/map)
-    assert_type(Op.len(), Operator[object, int])
-    assert_type(Op.is_null(), Operator[object, bool])
-    assert_type(Op.is_empty(), Operator[object, bool])
-
-    # Sequence operators
-    assert_type(Op.index(0), Operator[Sequence[object], object])
-    assert_type(Op.slice(0, 1), Operator[Sequence[object], list[object]])
-    assert_type(Op.first(), Operator[Sequence[object], object])
-    assert_type(Op.last(), Operator[Sequence[object], object])
-
-    # Mapping operators
-    assert_type(Op.get("key"), Operator[Mapping[str, object], object])
-    assert_type(Op.get_or("key", 0), Operator[Mapping[str, int], int])
-    assert_type(Op.keys(), Operator[Mapping[str, object], list[str]])
-    assert_type(Op.values(), Operator[Mapping[str, object], list[object]])
-
-    # Coercion operators
-    assert_type(Op.assert_str(), Operator[object, str])
-    assert_type(Op.expect_str(), Operator[object, str])
-    assert_type(Op.as_str(), Operator[object, str])
-    assert_type(Op.json_decode(), Operator[str | bytes, Mapping[str, object]])
-
-    def to_len(value: str) -> int:
-        return len(value)
-
-    assert_type(Op.map_py(to_len), Operator[str, int])
-
-    # ==========================================================================
-    # Operator: Namespace API
-    # ==========================================================================
-
-    # Op.text namespace
-    assert_type(Op.text.split("@"), Operator[str, list[str]])
-    assert_type(Op.text.to_uppercase(), Operator[str, str])
-    assert_type(Op.text.trim(), Operator[str, str])
-    assert_type(Op.text.lower(), Operator[str, str])
-    assert_type(Op.text.replace("a", "b"), Operator[str, str])
-
-    # Op.seq namespace
-    assert_type(Op.seq.index(0), Operator[Sequence[object], object])
-    assert_type(Op.seq.slice(0, 1), Operator[Sequence[object], list[object]])
-    assert_type(Op.seq.first(), Operator[Sequence[object], object])
-    assert_type(Op.seq.last(), Operator[Sequence[object], object])
-
-    # Op.map namespace
-    assert_type(Op.map.get("key"), Operator[Mapping[str, object], object])
-    assert_type(Op.map.get_or("key", 0), Operator[Mapping[str, int], int])
-    assert_type(Op.map.keys(), Operator[Mapping[str, object], list[str]])
-    assert_type(Op.map.values(), Operator[Mapping[str, object], list[object]])
-
-    # Op.coerce namespace
-    assert_type(Op.coerce.assert_str(), Operator[object, str])
-    assert_type(Op.coerce.expect_str(), Operator[object, str])
-    assert_type(Op.coerce.as_str(), Operator[object, str])
-    assert_type(Op.coerce.json_decode(), Operator[str | bytes, Mapping[str, object]])
-
-    # Op.core namespace
-    assert_type(Op.core.is_null(), Operator[object, bool])
-    assert_type(Op.core.is_empty(), Operator[object, bool])
-
-    # Op.core namespace
-    assert_type(Op.core.map_py(to_len), Operator[str, int])
-
-    # ==========================================================================
-    # Blueprint: Construction and Chaining
-    # ==========================================================================
-
-    # Blueprint() returns Blueprint[object, object]
-    assert_type(Blueprint(), Blueprint[object, object])
-
-    # Blueprint.any() returns Blueprint[object, object]
-    assert_type(Blueprint.any(), Blueprint[object, object])
-
-    # Blueprint.for_type() narrows input type
-    assert_type(Blueprint.for_type(str), Blueprint[str, str])
-    assert_type(Blueprint.for_type(int), Blueprint[int, int])
-
-    # pipe() transforms output type
-    bp_split = Blueprint.for_type(str).pipe(Op.split("@"))
-    assert_type(bp_split, Blueprint[str, list[str]])
-
-    # Chained pipes
-    bp_chain = Blueprint.for_type(str).pipe(Op.split("@")).pipe(Op.index(0))
-    assert_type(bp_chain, Blueprint[str, object])
-
-    # guard_str() narrows object -> str
-    bp_guarded = Blueprint.any().guard_str()
-    assert_type(bp_guarded, Blueprint[object, str])
-
-    # Full chain with guard_str
-    bp_full = (
-        Blueprint.for_type(str)
-        .pipe(Op.split("@"))
-        .pipe(Op.index(1))
-        .guard_str()
-        .pipe(Op.to_uppercase())
-    )
-    assert_type(bp_full, Blueprint[str, str])
-
-    # Invalid operator insertion should be rejected by type checkers.
-    # These are documented with type ignores to keep strict checking green.
-    _bp_invalid_str = Blueprint.for_type(int).pipe(Op.to_uppercase())  # type: ignore[arg-type]
-    _bp_invalid_map = Blueprint.for_type(str).pipe(Op.get("key"))  # type: ignore[arg-type]
-
-    # ==========================================================================
-    # Blueprint: Namespace API equivalence
-    # ==========================================================================
-
-    # Namespace API should produce same types as flat API
-    bp_ns = Blueprint.for_type(str).pipe(Op.text.split("@")).pipe(Op.seq.index(0))
-    assert_type(bp_ns, Blueprint[str, object])
-
-    bp_coerce = Blueprint().pipe(Op.coerce.expect_str()).pipe(Op.text.to_uppercase())
-    assert_type(bp_coerce, Blueprint[object, str])
-
-    # ==========================================================================
-    # run() function
-    # ==========================================================================
-
-    bp_for_run = Blueprint.for_type(str).pipe(Op.split("@"))
-    result_from_run = run(bp_for_run, "a@b")
-    assert_type(result_from_run, Result[list[str], Error[ErrorCode]])
 
     # ==========================================================================
     # Error properties

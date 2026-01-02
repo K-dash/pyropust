@@ -8,28 +8,22 @@ CARGO_TERM_COLOR = "always"
 # Code Generation
 # =============================================================================
 
-[tasks.gen]
-description = "Generate Op class from kind.rs metadata"
-command = "python3"
-args = ["tools/gen_ops.py"]
-
 [tasks.gen-native-stub]
 description = "Generate pyropust_native.pyi from __init__.pyi"
 command = "python3"
 args = ["tools/gen_native_stub.py"]
 
 [tasks.gen-all]
-description = "Generate all code (Op class + native stub)"
-dependencies = ["gen", "gen-native-stub"]
+description = "Generate all code (native stub)"
+dependencies = ["gen-native-stub"]
 
 [tasks.check-gen]
 description = "Check if generated code is up-to-date"
 script = """
-python3 tools/gen_ops.py
 python3 tools/gen_native_stub.py
 cargo fmt
 uv run ruff format pyropust/__init__.pyi pyropust/pyropust_native.pyi --quiet
-if ! git diff --exit-code src/py/op_generated.rs src/py/mod.rs src/lib.rs pyropust/__init__.pyi pyropust/pyropust_native.pyi; then
+if ! git diff --exit-code pyropust/__init__.pyi pyropust/pyropust_native.pyi; then
     echo "❌ Generated code is out of date. Run 'makers gen-all && makers fmt-all' to update."
     exit 1
 fi
@@ -142,11 +136,6 @@ args = ["run", "pytest", "-v"]
 description = "Run Python tests with coverage report"
 command = "uv"
 args = ["run", "pytest", "--cov=pyropust", "--cov-report=term-missing", "--cov-report=html", "--cov-report=xml"]
-
-[tasks.bench]
-description = "Run Blueprint vs Python timeit benchmark"
-command = "uv"
-args = ["run", "python", "bench/bench_blueprint_vs_python.py"]
 
 [tasks.pyright]
 description = "Run pyright type checks via uv"

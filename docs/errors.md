@@ -14,7 +14,7 @@ This document defines the shared error format used by pyropust across Python and
 - `message`: string
   - Human-readable summary.
 - `op`: string | None
-  - Operator name when relevant.
+  - Operation or context name when relevant.
 - `path`: list[str | int]
   - Path to the failing location (keys or indexes).
 - `expected`: string | None

@@ -13,9 +13,9 @@ This is **not just another Result library**.
 
 pyropust is built around three core ideas:
 
-- **Blueprints** — typed, declarative data-processing pipelines
-- **Rust operators** — hot-path operations (e.g. JSON decoding) executed safely and efficiently in Rust
+- **Type-safe errors** — structured `Result / Error` flows with `@do`, `bail/ensure`, and `*_try`
 - **Exception boundaries** — explicit normalization of Python exceptions into `Result`
+- **Composable APIs** — predictable chaining without hidden control flow
 
 If you have ever thought:
 
@@ -52,7 +52,7 @@ You do not need to switch everything at once. A realistic path is:
 1. Wrap exceptions with `@catch`
 2. Use `Result / Option` explicitly in Python code
 3. Use `@do` for structured propagation
-4. Introduce `Blueprint` for typed pipelines
+4. Use typed composition where it adds value
 
 ## Key concepts
 
@@ -204,70 +204,16 @@ These helpers make it easy to:
 - Classify failures without losing detail
 - Keep error handling explicit and testable
 
-### 2) Blueprint: typed pipelines
-
-A **Blueprint** is a declarative pipeline that describes what happens to data, not how it is wired together.
-
-```python
-from pyropust import Blueprint, Op
-
-bp = (
-    Blueprint.for_type(str)
-    .pipe(Op.json_decode())
-    .pipe(Op.get("user"))
-    .pipe(Op.get("id"))
-)
-```
-
-Characteristics:
-
-- **Typed**: `Blueprint.for_type(T)` gives static analyzers a concrete starting point
-- **Composable**: pipelines are values, not control flow
-- **No runtime type checks**: types are for humans and tools, not runtime checks
-
-Blueprints are the primary abstraction of pyropust.
-
-Blueprints are inert definitions. Use `run(bp, value)` to execute them, typically inside an exception boundary.
-
-Only a core set of basic operators is supported today; see the full list in [docs/operations.md](docs/operations.md).
-
-### 3) Rust operators (hot paths)
-
-Some operations are performance-critical and error-prone. pyropust implements these as Rust-backed operators:
-
-- `Op.json_decode()`
-- (future) `Op.base64_decode()`, `Op.url_parse()`, ...
-
-Benefits:
-
-- Faster execution for hot paths
-- Consistent error semantics
-- No Python-level exceptions leaking through the pipeline
-
-You can always fall back to Python:
-
-```python
-bp = bp.pipe(Op.map_py(lambda x: x + 1))
-```
-
-Rust where it matters, Python where it’s convenient.
-
-### 4) Exception boundaries (`@catch`)
+### 2) Exception boundaries (`@catch`)
 
 Python exceptions are unavoidable. pyropust makes them explicit.
 
 ```python
-from pyropust import Blueprint, Op, catch, run
-
-bp = (
-    Blueprint.for_type(str)
-    .pipe(Op.json_decode())
-    .pipe(Op.get("value"))
-)
+from pyropust import catch
 
 @catch
 def load_value(payload: str):
-    return run(bp, payload)
+    return int(payload)
 ```
 
 Inside the boundary:
@@ -283,7 +229,7 @@ Outside the boundary:
 
 This makes error flow visible, testable, and composable.
 
-### 5) `@do`: Rust-like `?` for Python
+### 3) `@do`: Rust-like `?` for Python
 
 The `@do` decorator enables linear, Rust-style propagation of `Result`.
 
@@ -348,30 +294,30 @@ Note: Some platforms may require a Rust toolchain to build from source.
 ## Minimal example (30 seconds)
 
 ```python
-from pyropust import Blueprint, Op, catch, run
+from pyropust import Error, ErrorCode, Ok, Result, catch, err
 
-bp = (
-    Blueprint.for_type(str)
-    .pipe(Op.json_decode())
-    .pipe(Op.get("value"))
-)
+class Code(ErrorCode):
+    INVALID = "invalid"
 
 @catch
-def run_value(payload: str):
-    return run(bp, payload)
+def parse_int(value: str) -> int:
+    return int(value)
 
-result = run_value('{"value": 123}')
+def run_value(payload: str) -> Result[int, Error[Code]]:
+    return parse_int(payload).map_err(
+        lambda _err: err(Code.INVALID, "invalid integer").unwrap_err()
+    )
+
+result = run_value("123")
 ```
 
 - No `try/except`
 - Failures are explicit
-- The pipeline is reusable and testable
+- `@catch` makes exception boundaries visible
 
 ## Documentation
 
-- [Operators](docs/operations.md)
 - [Errors](docs/errors.md)
-- [Benchmarks](docs/benchmarks.md)
 
 ## Non-goals
 
@@ -385,7 +331,6 @@ It is a boundary and pipeline tool, not a new language.
 
 ## Roadmap
 
-- More Rust-backed operators
 - Benchmark suite and published numbers
 - Better IDE / type-checker ergonomics
 - Stabilization of public APIs

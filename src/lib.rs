@@ -3,8 +3,9 @@ mod ops;
 mod py;
 
 use py::{
-    exception_to_error, py_err, py_err_from_parts, py_none, py_ok, py_some, run, Blueprint, Error,
-    ErrorKindObj, Op, OpCoerce, OpCore, OpMap, OpSeq, OpText, Operator, OptionObj, ResultObj,
+    exception_to_error, py_bail_from_parts, py_ensure, py_err, py_err_from_parts, py_none, py_ok,
+    py_some, run, Blueprint, Error, ErrorKindObj, Op, OpCoerce, OpCore, OpMap, OpSeq, OpText,
+    Operator, OptionObj, ResultObj,
 };
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
@@ -29,6 +30,8 @@ fn pyropust_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_ok, m)?)?;
     m.add_function(wrap_pyfunction!(py_err, m)?)?;
     m.add_function(wrap_pyfunction!(py_err_from_parts, m)?)?;
+    m.add_function(wrap_pyfunction!(py_bail_from_parts, m)?)?;
+    m.add_function(wrap_pyfunction!(py_ensure, m)?)?;
     m.add_function(wrap_pyfunction!(py_some, m)?)?;
     m.add_function(wrap_pyfunction!(py_none, m)?)?;
     m.add_function(wrap_pyfunction!(run, m)?)?;
@@ -42,8 +45,10 @@ fn pyropust_native(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
             "Ok",
             "Err",
             "err",
+            "bail",
             "Some",
             "None_",
+            "ensure",
             "Error",
             "ErrorKind",
             "Operator",

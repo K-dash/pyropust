@@ -366,6 +366,31 @@ def err[CodeT: ErrorCode](
     got: str | None = None,
     cause: str | None = None,
 ) -> Result[Never, Error[CodeT]]: ...
+def bail[CodeT: ErrorCode](
+    code: CodeT,
+    message: str,
+    *,
+    kind: ErrorKind | str | None = None,
+    metadata: Mapping[str, str] | None = None,
+    op: str | None = None,
+    path: list[str | int] | None = None,
+    expected: str | None = None,
+    got: str | None = None,
+    cause: str | None = None,
+) -> Result[Never, Error[CodeT]]: ...
+def ensure[CodeT: ErrorCode](
+    condition: object,
+    code: CodeT,
+    message: str,
+    *,
+    kind: ErrorKind | str | None = None,
+    metadata: Mapping[str, str] | None = None,
+    op: str | None = None,
+    path: list[str | int] | None = None,
+    expected: str | None = None,
+    got: str | None = None,
+    cause: str | None = None,
+) -> Result[None, Error[CodeT]]: ...
 def Some[T](value: T) -> Option[T]: ...
 def None_() -> Option[Never]: ...
 

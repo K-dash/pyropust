@@ -61,13 +61,16 @@ You do not need to switch everything at once. A realistic path is:
 Rust-style `Result[T, E]` and `Option[T]` as first-class values.
 
 ```python
-from pyropust import ErrorCode, Ok, Some, None_, err
+from pyropust import ErrorCode, Ok, Some, None_, err, bail, ensure
 
 class Code(ErrorCode):
     BOOM = "boom"
 
 value = Ok(10)
 error = err(Code.BOOM, "boom")
+forced = bail(Code.BOOM, "boom")
+
+check = ensure(10 > 0, Code.BOOM, "must be positive")
 
 maybe = Some(42)
 empty = None_()

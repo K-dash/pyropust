@@ -589,6 +589,53 @@ pub fn py_err_from_parts(
     Ok(err(Py::new(py, error)?.into()))
 }
 
+#[allow(clippy::too_many_arguments)]
+#[pyfunction(name = "bail")]
+#[pyo3(signature = (code, message, *, kind = None, metadata = None, op = None, path = None, expected = None, got = None, cause = None))]
+pub fn py_bail_from_parts(
+    py: Python<'_>,
+    code: Py<PyAny>,
+    message: &str,
+    kind: Option<Py<PyAny>>,
+    metadata: Option<Py<PyAny>>,
+    op: Option<String>,
+    path: Option<Py<PyAny>>,
+    expected: Option<String>,
+    got: Option<String>,
+    cause: Option<String>,
+) -> PyResult<ResultObj> {
+    let error = build_error_from_parts(
+        py, code, message, kind, metadata, op, path, expected, got, cause,
+    )?;
+    Ok(err(Py::new(py, error)?.into()))
+}
+
+#[allow(clippy::too_many_arguments)]
+#[pyfunction(name = "ensure")]
+#[pyo3(signature = (condition, code, message, *, kind = None, metadata = None, op = None, path = None, expected = None, got = None, cause = None))]
+pub fn py_ensure(
+    py: Python<'_>,
+    condition: Bound<'_, PyAny>,
+    code: Py<PyAny>,
+    message: &str,
+    kind: Option<Py<PyAny>>,
+    metadata: Option<Py<PyAny>>,
+    op: Option<String>,
+    path: Option<Py<PyAny>>,
+    expected: Option<String>,
+    got: Option<String>,
+    cause: Option<String>,
+) -> PyResult<ResultObj> {
+    if condition.is_truthy()? {
+        Ok(ok(py.None()))
+    } else {
+        let error = build_error_from_parts(
+            py, code, message, kind, metadata, op, path, expected, got, cause,
+        )?;
+        Ok(err(Py::new(py, error)?.into()))
+    }
+}
+
 // Internal constructor functions
 pub fn ok(value: Py<PyAny>) -> ResultObj {
     ResultObj {

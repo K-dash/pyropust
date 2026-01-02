@@ -12,8 +12,10 @@ from pyropust import (
     Ok,
     Result,
     Some,
+    bail,
     catch,
     do,
+    ensure,
     err,
     exception_to_error,
 )
@@ -31,6 +33,55 @@ def test_result_ok_err() -> None:
     assert err_result.is_ok() is False
     assert err_result.is_err() is True
     assert err_result.unwrap_err().message == "nope"
+
+
+def test_bail_and_ensure() -> None:
+    result = bail(SampleCode.ERROR, "boom")
+    assert result.is_err()
+    assert result.unwrap_err().message == "boom"
+
+    ok_result = ensure(condition=True, code=SampleCode.ERROR, message="nope")
+    assert ok_result.is_ok()
+    assert ok_result.unwrap() is None
+
+    err_result = ensure(condition=False, code=SampleCode.BAD_INPUT, message="bad input")
+    assert err_result.is_err()
+    assert err_result.unwrap_err().code == SampleCode.BAD_INPUT
+
+
+def test_do_with_ensure_and_bail() -> None:
+    @do
+    def ok_path(
+        value: int,
+    ) -> Generator[Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]]:
+        yield ensure(condition=value > 0, code=SampleCode.ERROR, message="must be positive")
+        return Ok(value + 1)
+
+    @do
+    def err_path() -> Generator[
+        Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]
+    ]:
+        yield ensure(condition=False, code=SampleCode.BAD_INPUT, message="bad input")
+        return Ok(1)
+
+    @do
+    def bail_path() -> Generator[
+        Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]
+    ]:
+        yield bail(SampleCode.ERROR, "boom")
+        return Ok(1)
+
+    ok_result: Result[int, Error[ErrorCode]] = ok_path(1)
+    assert ok_result.is_ok()
+    assert ok_result.unwrap() == 2
+
+    err_result: Result[int, Error[ErrorCode]] = err_path()
+    assert err_result.is_err()
+    assert err_result.unwrap_err().code == SampleCode.BAD_INPUT
+
+    bail_result: Result[int, Error[ErrorCode]] = bail_path()
+    assert bail_result.is_err()
+    assert bail_result.unwrap_err().message == "boom"
 
 
 def test_option_unwrap() -> None:

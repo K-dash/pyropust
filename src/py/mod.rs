@@ -12,4 +12,4 @@ pub use op_generated::{Op, OpCoerce, OpCore, OpMap, OpSeq, OpText};
 // END GENERATED EXPORTS
 pub use operator::Operator;
 pub use option::{py_none, py_some, OptionObj};
-pub use result::{py_err, py_err_from_parts, py_ok, ResultObj};
+pub use result::{py_bail_from_parts, py_ensure, py_err, py_err_from_parts, py_ok, ResultObj};

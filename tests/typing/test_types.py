@@ -27,8 +27,10 @@ from pyropust import (
     Option,
     Result,
     Some,
+    bail,
     catch,
     do,
+    ensure,
     err,
     run,
 )
@@ -64,6 +66,11 @@ if TYPE_CHECKING:
     )
     err_union: Result[Never, Error[AlphaCode | BetaCode]] = err(AlphaCode.A, "oops")
     assert_type(err_union, Result[Never, Error[AlphaCode | BetaCode]])
+    assert_type(bail(SampleCode.ERROR, "boom"), Result[Never, Error[SampleCode]])
+    assert_type(
+        ensure(condition=True, code=SampleCode.ERROR, message="boom"),
+        Result[None, Error[SampleCode]],
+    )
 
     # ==========================================================================
     # Result: Methods

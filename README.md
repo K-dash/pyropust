@@ -71,9 +71,11 @@ maybe = Some(42)
 empty = None_()
 ```
 
-`err(...)` is the ergonomic helper for creating an `Error` without spelling `Err(Error(...))` every time.
-Result is explicit about failures. All failures are represented as `Error`. You can return it from functions and branch on `is_ok / is_err` without exceptions.
-Note: `unwrap()` is intended for tests, examples, and application boundaries. Inside libraries and pipelines, prefer structured propagation (`@do`, `context`, `and_then`).
+- `err(...)` is the ergonomic helper for creating an `Error` without spelling `Err(Error(...))` every time.
+- Result is explicit about failures. All failures are represented as `Error`. You can return it from functions and branch on `is_ok / is_err` without exceptions.
+
+> [!NOTE]
+> `unwrap()` is intended for tests, examples, and application boundaries. Inside libraries and pipelines, prefer structured propagation (`@do`, `context`, `and_then`).
 
 ```python
 from pyropust import Error, ErrorCode, Ok, Result, err

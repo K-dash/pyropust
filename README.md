@@ -5,6 +5,9 @@
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyropust?period=total&units=INTERNATIONAL_SYSTEM&left_color=GRAY&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/pyropust)
 [![codecov](https://codecov.io/github/K-dash/pyropust/graph/badge.svg?token=HaPSYBJktD)](https://codecov.io/github/K-dash/pyropust)
 
+> [!CAUTION]
+> This is an experimental project, and development is currently paused.
+
 **Rust-powered, type-safe pipelines for Python.**
 
 pyropust bridges the messy, exception-heavy reality of Python with the explicit, composable world of Rust’s `Result / Option`.
@@ -229,24 +232,6 @@ Outside the boundary:
 
 This makes error flow visible, testable, and composable.
 
-### 3) `@do`: Rust-like `?` for Python
-
-The `@do` decorator enables linear, Rust-style propagation of `Result`.
-
-```python
-from pyropust import Error, ErrorCode, Ok, Result, do
-
-@do
-def process(data: str) -> Result[str, Error[ErrorCode]]:
-    text = yield Ok(data)
-    return Ok(text.upper())
-```
-
-When to use: `@do` reads like imperative code and is better when you need intermediate variables, early returns, or mixed steps.
-Prefer `context` for adding meaning instead of catching exceptions.
-
-This is not syntax sugar over exceptions — it is structured propagation of `Result` values.
-
 ## Framework boundaries
 
 You can safely use pyropust in frameworks that expect exceptions by converting `Result` back into exceptions at the boundary.
@@ -286,7 +271,7 @@ pip install pyropust
 
 Supported:
 
-- Python 3.10+
+- Python 3.12+
 - CPython (wheels provided)
 
 Note: Some platforms may require a Rust toolchain to build from source.

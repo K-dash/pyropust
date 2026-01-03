@@ -2,7 +2,6 @@ from enum import StrEnum
 from typing import Any
 
 from .catch import catch
-from .do import do
 
 try:
     from .pyropust_native import (
@@ -50,7 +49,6 @@ __all__ = [
     "Some",
     "bail",
     "catch",
-    "do",
     "ensure",
     "err",
     "exception_to_error",

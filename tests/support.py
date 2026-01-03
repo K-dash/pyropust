@@ -27,13 +27,13 @@ class SampleCode(ErrorCode):
 def err_msg(
     message: str,
     code: ErrorCode = SampleCode.ERROR,
-) -> Result[Never, Error[ErrorCode]]:
+) -> Result[Never]:
     return err(code, message)
 
 
-def new_error[CodeT: ErrorCode](
+def new_error(
     *,
-    code: CodeT,
+    code: str | ErrorCode,
     message: str,
     kind: ErrorKind | str | None = None,
     op: str | None = None,
@@ -41,8 +41,8 @@ def new_error[CodeT: ErrorCode](
     expected: str | None = None,
     got: str | None = None,
     metadata: Mapping[str, str] | None = None,
-) -> Error[CodeT]:
-    return Error[CodeT].new(
+) -> Error:
+    return Error.new(
         code=code,
         message=message,
         kind=kind,
@@ -54,10 +54,10 @@ def new_error[CodeT: ErrorCode](
     )
 
 
-def wrap_error[CodeT: ErrorCode](
-    err_value: BaseException | Error[CodeT],
+def wrap_error(
+    err_value: BaseException | Error,
     *,
-    code: CodeT,
+    code: str | ErrorCode,
     message: str,
     kind: ErrorKind | str | None = None,
     op: str | None = None,
@@ -65,8 +65,8 @@ def wrap_error[CodeT: ErrorCode](
     expected: str | None = None,
     got: str | None = None,
     metadata: Mapping[str, str] | None = None,
-) -> Error[CodeT]:
-    return Error[CodeT].wrap(
+) -> Error:
+    return Error.wrap(
         err_value,
         code=code,
         message=message,

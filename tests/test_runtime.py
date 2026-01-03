@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-
 import pytest
 
 from pyropust import (
     Error,
-    ErrorCode,
     ErrorKind,
     None_,
     Ok,
@@ -14,7 +11,6 @@ from pyropust import (
     Some,
     bail,
     catch,
-    do,
     ensure,
     err,
     exception_to_error,
@@ -23,7 +19,7 @@ from tests.support import SampleCode, new_error, wrap_error
 
 
 def test_result_ok_err() -> None:
-    ok: Result[int, Error[ErrorCode]] = Ok(123)
+    ok: Result[int] = Ok(123)
     err_result = err(SampleCode.ERROR, "nope")
 
     assert ok.is_ok() is True
@@ -49,41 +45,6 @@ def test_bail_and_ensure() -> None:
     assert err_result.unwrap_err().code == SampleCode.BAD_INPUT
 
 
-def test_do_with_ensure_and_bail() -> None:
-    @do
-    def ok_path(
-        value: int,
-    ) -> Generator[Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]]:
-        yield ensure(condition=value > 0, code=SampleCode.ERROR, message="must be positive")
-        return Ok(value + 1)
-
-    @do
-    def err_path() -> Generator[
-        Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]
-    ]:
-        yield ensure(condition=False, code=SampleCode.BAD_INPUT, message="bad input")
-        return Ok(1)
-
-    @do
-    def bail_path() -> Generator[
-        Result[None, Error[ErrorCode]], None, Result[int, Error[ErrorCode]]
-    ]:
-        yield bail(SampleCode.ERROR, "boom")
-        return Ok(1)
-
-    ok_result: Result[int, Error[ErrorCode]] = ok_path(1)
-    assert ok_result.is_ok()
-    assert ok_result.unwrap() == 2
-
-    err_result: Result[int, Error[ErrorCode]] = err_path()
-    assert err_result.is_err()
-    assert err_result.unwrap_err().code == SampleCode.BAD_INPUT
-
-    bail_result: Result[int, Error[ErrorCode]] = bail_path()
-    assert bail_result.is_err()
-    assert bail_result.unwrap_err().message == "boom"
-
-
 def test_option_unwrap() -> None:
     some = Some("x")
     none = None_()
@@ -98,18 +59,6 @@ def test_option_unwrap() -> None:
         pass
     else:
         raise AssertionError("unwrap() on None_ must raise")
-
-
-def test_do_short_circuit() -> None:
-    @do
-    def flow(
-        value: str,
-    ) -> Generator[Result[str, Error[ErrorCode]], str, Result[str, Error[ErrorCode]]]:
-        value = yield Ok(value)
-        return Ok(value.upper())
-
-    assert flow("hello").unwrap() == "HELLO"
-    assert flow("invalid").is_err() is False
 
 
 def test_result_attempt_and_catch() -> None:
@@ -138,7 +87,7 @@ def test_result_attempt_and_catch() -> None:
 
 
 def test_unwrap_or_raise() -> None:
-    ok: Result[int, Error[ErrorCode]] = Ok(123)
+    ok: Result[int] = Ok(123)
     assert ok.unwrap_or_raise(RuntimeError("boom")) == 123
 
     err_result = err(SampleCode.ERROR, "nope")
@@ -163,7 +112,7 @@ def test_error_dict_roundtrip() -> None:
     def raise_value_error() -> None:
         raise ValueError("boom")
 
-    err: Error[ErrorCode] | None = None
+    err: Error | None = None
     try:
         raise_value_error()
     except ValueError as exc:
@@ -268,7 +217,7 @@ def test_result_context_wraps_error() -> None:
 
 
 def test_result_context_ok_passthrough() -> None:
-    ok: Result[int, Error[ErrorCode]] = Ok(123)
+    ok: Result[int] = Ok(123)
     out = ok.context("ignored")
     assert out.is_ok()
     assert out.unwrap() == 123

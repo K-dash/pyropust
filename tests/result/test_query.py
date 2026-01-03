@@ -1,14 +1,14 @@
 """Tests for Result query methods (is_ok_and, is_err_and).
 
 Note: Type annotations are required when using Ok()/err() constructors
-because they have inferred types Result[T, Error[CodeT]] and Result[Never, Error[CodeT]].
+because they have inferred types Result[T] and Result[Never].
 This matches Rust's type system design. Use function return types or
 intermediate functions to satisfy strict type checking.
 """
 
 from __future__ import annotations
 
-from pyropust import Error, ErrorCode, Ok, Result
+from pyropust import Ok, Result
 from tests.support import err_msg
 
 
@@ -16,15 +16,15 @@ class TestResultIsOkAnd:
     """Test Result.is_ok_and() for conditional Ok checking."""
 
     def test_returns_true_when_ok_and_predicate_true(self) -> None:
-        res: Result[int, Error[ErrorCode]] = Ok(10)
+        res: Result[int] = Ok(10)
         assert res.is_ok_and(lambda x: x > 5) is True
 
     def test_returns_false_when_ok_but_predicate_false(self) -> None:
-        res: Result[int, Error[ErrorCode]] = Ok(3)
+        res: Result[int] = Ok(3)
         assert res.is_ok_and(lambda x: x > 5) is False
 
     def test_returns_false_when_err(self) -> None:
-        res: Result[int, Error[ErrorCode]] = err_msg("error")
+        res: Result[int] = err_msg("error")
         assert res.is_ok_and(lambda x: x > 5) is False
 
     def test_accepts_truthy_values(self) -> None:
@@ -40,7 +40,7 @@ class TestResultIsOkAnd:
 
     def test_predicate_receives_ok_value(self) -> None:
         """Verify predicate gets the actual Ok value."""
-        res: Result[list[int], Error[ErrorCode]] = Ok([1, 2, 3])
+        res: Result[list[int]] = Ok([1, 2, 3])
         assert res.is_ok_and(lambda x: len(x) == 3) is True
         assert res.is_ok_and(lambda x: len(x) == 5) is False
 
@@ -53,7 +53,7 @@ class TestResultIsOkAnd:
             called = True
             return True
 
-        res: Result[int, Error[ErrorCode]] = err_msg("error")
+        res: Result[int] = err_msg("error")
         assert res.is_ok_and(side_effect_predicate) is False
         assert called is False
 
@@ -62,29 +62,29 @@ class TestResultIsErrAnd:
     """Test Result.is_err_and() for conditional Err checking."""
 
     def test_returns_true_when_err_and_predicate_true(self) -> None:
-        res: Result[int, Error[ErrorCode]] = err_msg("error")
+        res: Result[int] = err_msg("error")
         assert res.is_err_and(lambda e: "err" in e.message) is True
 
     def test_returns_false_when_err_but_predicate_false(self) -> None:
-        res: Result[int, Error[ErrorCode]] = err_msg("success")
+        res: Result[int] = err_msg("success")
         assert res.is_err_and(lambda e: "err" in e.message) is False
 
     def test_returns_false_when_ok(self) -> None:
-        res: Result[int, Error[ErrorCode]] = Ok(10)
+        res: Result[int] = Ok(10)
         assert res.is_err_and(lambda e: "err" in e.message) is False
 
     def test_accepts_truthy_values(self) -> None:
         """Verify Python truthiness protocol works."""
         # Non-empty string is truthy
-        res_err: Result[int, Error[ErrorCode]] = err_msg("error")
+        res_err: Result[int] = err_msg("error")
         assert res_err.is_err_and(lambda e: e.message) is True
         # Empty string is falsy
-        res_empty: Result[int, Error[ErrorCode]] = err_msg("")
+        res_empty: Result[int] = err_msg("")
         assert res_empty.is_err_and(lambda e: e.message) is False
 
     def test_predicate_receives_err_value(self) -> None:
         """Verify predicate gets the actual Err value."""
-        res: Result[int, Error[ErrorCode]] = err_msg("404")
+        res: Result[int] = err_msg("404")
         assert res.is_err_and(lambda e: e.message == "404") is True
         assert res.is_err_and(lambda e: e.message == "500") is False
 
@@ -97,6 +97,6 @@ class TestResultIsErrAnd:
             called = True
             return True
 
-        res: Result[int, Error[ErrorCode]] = Ok(10)
+        res: Result[int] = Ok(10)
         assert res.is_err_and(side_effect_predicate) is False
         assert called is False
